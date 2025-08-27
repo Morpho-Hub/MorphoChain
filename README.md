@@ -17,7 +17,7 @@ MorphoChain is a blockchain-based agri-fintech platform that connects small and 
 ## Technology Stack
 
 - **Frontend**: Next.js, React, Tailwind CSS
-- **Backend**: Node.js, Express or Python (depending on modules)
+- **Backend**: Node.js, Express
 - **Blockchain / Smart Contracts**: Solidity, Hardhat/Truffle
-- **Database**: PostgreSQL / MongoDB (optional, for off-chain data)
+- **Database**: MongoDB
 - **Testing & CI/CD**: Jest, Mocha, GitHub Actions
