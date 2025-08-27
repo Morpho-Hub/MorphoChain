@@ -1,4 +1,4 @@
-![Logo](public/MorphoChain\ -\ Black.png)
+![Logo](public/MorphoChain-Dark.png)
 
 
 MorphoChain is a **regenerative agri-fintech platform** designed to connect small and medium-scale agricultural producers with investors, buyers, and impact-focused stakeholders. By tokenizing regenerative impact, MorphoChain creates a **transparent, secure, and traceable digital marketplace** where each token represents **measurable positive impact** in agriculture, environment, and community development.
