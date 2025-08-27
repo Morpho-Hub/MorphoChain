@@ -1,16 +1,35 @@
 # MorphoChain
 
-MorphoChain is a blockchain-based agri-fintech platform that connects small and medium-scale agricultural producers with investors and buyers. By tokenizing agricultural assets such as coffee, cacao, and tropical fruits, MorphoChain creates a transparent, secure, and traceable digital marketplace where each token represents a measurable portion of future production.
+MorphoChain is a **regenerative agri-fintech platform** designed to connect small and medium-scale agricultural producers with investors, buyers, and impact-focused stakeholders. By tokenizing regenerative impact, MorphoChain creates a **transparent, secure, and traceable digital marketplace** where each token represents **measurable positive impact** in agriculture, environment, and community development.
 
 ---
 
-## Key Features
+## Key Principles
 
-- **Tokenized Agricultural Assets**: Each token represents a specific portion of future crop production.
-- **Transparency & Traceability**: Blockchain ensures full visibility of product origin and farming practices.
-- **Direct Investor-Producer Connection**: Provides early financing and market access for producers.
-- **Sustainability Focus**: Promotes environmentally and socially responsible agricultural practices.
-- **Localized Implementation**: Tailored to Costa Rica’s agricultural sector with potential regional expansion.
+- **Regenerative Tokenized Assets**  
+  Each token represents tangible positive impact, such as carbon sequestration, soil fertility improvement, biodiversity preservation, or social/community benefits. Tokens may also represent agricultural production, but their value is primarily linked to regenerative outcomes.
+
+- **Transparency & Traceability**  
+  Every action and outcome is verifiable, ensuring full visibility of regenerative practices and measurable impact.
+
+- **Direct Investor-Producer Connection**  
+  Enables producers to access early financing while allowing investors to support regenerative agriculture and track tangible results.
+
+- **Sustainability & Regeneration Focus**  
+  Promotes environmentally and socially responsible practices that restore ecosystems and empower local communities.
+
+- **Impact Metrics Dashboard**  
+  Investors and producers can monitor regenerative performance in real-time, ensuring accountability and measurable returns beyond financial gain.
+
+- **Diversified Regenerative Tokens**  
+  Tokens can represent single regenerative activities or a combination of agricultural outputs and environmental/social impact, enabling flexible investment opportunities.
+
+---
+
+## Vision
+
+MorphoChain aims to **redefine agricultural finance** by shifting from traditional commodity-based valuation to a **regenerative economy** model.  
+This approach allows financial resources to actively restore and improve ecosystems, support sustainable livelihoods, and create measurable positive outcomes in communities and the environment.
 
 ---
 
