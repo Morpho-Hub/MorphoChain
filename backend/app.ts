@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express, { Request, Response, Application } from "express";
 import mongoose from "mongoose";
+import cors from "cors";
 import apiRouter from "./src/index";
 
 dotenv.config();
@@ -19,6 +20,7 @@ const PORT = process.env.PORT || 3000;
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 
 // Routes
