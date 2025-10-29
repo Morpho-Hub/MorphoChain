@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { User, IUser } from '../models/user';
 
-// Interface for request body
 interface CreateUserRequest {
   firstName: string;
   lastName: string;
@@ -18,7 +17,7 @@ interface UpdateUserRequest {
   userType?: string;
 }
 
-// Interface for API response
+
 interface ApiResponse<T = any> {
   success: boolean;
   message?: string; 
@@ -26,18 +25,16 @@ interface ApiResponse<T = any> {
   count?: number;
   error?: string;
 }
-// Custom error type for MongoDB errors
+
 interface MongoError extends Error {
   kind?: string;
   code?: number;
 }
 
-// Create a new user
 export const createUser = async (req: Request<{}, {}, CreateUserRequest>, res: Response<ApiResponse<IUser>>): Promise<void> => {
   try {
     const { firstName, lastName, email, walletAddress, userType } = req.body;
 
-    // Check if user already exists with email or wallet address
     const existingUser = await User.findOne({
       $or: [
         { email: email.toLowerCase().trim() },
@@ -79,7 +76,6 @@ export const createUser = async (req: Request<{}, {}, CreateUserRequest>, res: R
   }
 };
 
-// Get all users
 export const getAllUsers = async (req: Request, res: Response<ApiResponse<IUser[]>>): Promise<void> => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
@@ -100,7 +96,6 @@ export const getAllUsers = async (req: Request, res: Response<ApiResponse<IUser[
   }
 };
 
-// Get user by ID
 export const getUserById = async (req: Request<{ id: string }>, res: Response<ApiResponse<IUser>>): Promise<void> => {
   try {
     const user = await User.findById(req.params.id);
@@ -137,7 +132,6 @@ export const getUserById = async (req: Request<{ id: string }>, res: Response<Ap
   }
 };
 
-// Get user by wallet address
 export const getUserByWallet = async (req: Request<{ walletAddress: string }>, res: Response<ApiResponse<IUser>>): Promise<void> => {
   try {
     const user = await User.findOne({ 
@@ -167,12 +161,10 @@ export const getUserByWallet = async (req: Request<{ walletAddress: string }>, r
   }
 };
 
-// Update user
 export const updateUser = async (req: Request<{ id: string }, {}, UpdateUserRequest>, res: Response<ApiResponse<IUser>>): Promise<void> => {
   try {
     const { firstName, lastName, email, walletAddress, userType } = req.body;
     
-    // Check if email or wallet address is being updated and if it already exists
     if (email || walletAddress) {
       const queryConditions: any[] = [];
       
@@ -204,7 +196,7 @@ export const updateUser = async (req: Request<{ id: string }, {}, UpdateUserRequ
     if (lastName) updateData.lastName = lastName.trim();
     if (email) updateData.email = email.toLowerCase().trim();
     if (walletAddress) updateData.walletAddress = walletAddress.toLowerCase().trim();
-    if (userType) updateData.userType = userType.trim();
+    if (userType) updateData.userType = userType.trim() as 'inversionista' | 'agricultor';
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -244,7 +236,6 @@ export const updateUser = async (req: Request<{ id: string }, {}, UpdateUserRequ
   }
 };
 
-// Delete user
 export const deleteUser = async (req: Request<{ id: string }>, res: Response<ApiResponse>): Promise<void> => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
