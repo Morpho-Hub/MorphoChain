@@ -46,7 +46,6 @@ export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Left Side - Branding */}
           <BrandingSection
-            title="MorphoChain"
             subtitle={t.welcomeSubtitle}
             imageUrl="https://images.unsplash.com/photo-1592864554447-5e40d96e2b21?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXJtZXIlMjBoYW5kcyUyMHNvaWx8ZW58MXx8fHwxNzYwNjc2MTUxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
             imageAlt="Farmer hands with soil"

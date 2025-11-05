@@ -1,12 +1,9 @@
 import React, { FC } from "react";
-import { Leaf } from "lucide-react";
 import ImageWithFallback from "@/src/atoms/ImageWithFallback";
-import Heading from "@/src/atoms/Heading";
 import Text from "@/src/atoms/Text";
 import StatsGrid from "@/src/molecules/StatsGrid";
 
 interface BrandingSectionProps {
-  title: string;
   subtitle: string;
   imageUrl: string;
   imageAlt: string;
@@ -18,7 +15,6 @@ interface BrandingSectionProps {
 }
 
 const BrandingSection: FC<BrandingSectionProps> = ({
-  title,
   subtitle,
   imageUrl,
   imageAlt,
@@ -27,19 +23,11 @@ const BrandingSection: FC<BrandingSectionProps> = ({
 }) => {
   return (
     <div className={`hidden lg:block space-y-8 ${className}`}>
-      {/* Logo and Title */}
-      <div className="flex items-center gap-3">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-green flex items-center justify-center">
-          <Leaf className="w-8 h-8 text-[#000000]" />
-        </div>
-        <div>
-          <Heading level={1} className="text-3xl">
-            {title}
-          </Heading>
-          <Text variant="body" className="text-[#000000]/70">
-            {subtitle}
-          </Text>
-        </div>
+      {/* Subtitle */}
+      <div className="text-center">
+        <Text variant="body" className="text-[#000000]/70 text-xl">
+          {subtitle}
+        </Text>
       </div>
 
       {/* Image */}
