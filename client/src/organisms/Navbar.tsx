@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Leaf } from 'lucide-react';
 import Button from '@/src/atoms/button';
 import { UserMenu } from '@/src/molecules';
@@ -33,12 +34,14 @@ const Navbar: React.FC<NavbarProps> = ({
   onGetStarted,
 }) => {
   const t = es.navbar;
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(initialIsLoggedIn);
 
   const handleGetStarted = () => {
-    setIsLoggedIn(true);
     if (onGetStarted) {
       onGetStarted();
+    } else {
+      router.push('/login-register');
     }
   };
   const menuLinks = [
