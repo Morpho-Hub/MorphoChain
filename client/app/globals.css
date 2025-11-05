@@ -1,140 +1,26 @@
 @import "tailwindcss";
 
-/* Project palette (we'll use these) */
-@theme {
-  /* Tailwind v4 theme colors -> use as bg-brand-*, text-brand-* */
-  --color-brand-accent: #d1e751; /* lime */
-  --color-brand-white: #ffffff;  /* white */
-  --color-brand-black: #000000;  /* black */
-  --color-brand-sky: #4dbce9;    /* sky blue */
-  --color-brand-cyan: #26ade4;   /* cyan */
-}
-
-/* Design tokens: palette + utility CSS variables */
 :root {
-  /* Core palette (light) */
-  /* Keep existing tokens; map brand palette for convenience */
-  --palette-accent: #d1e751;
-  --palette-white: #ffffff;
-  --palette-black: #000000;
-  --palette-sky: #4dbce9;
-  --palette-cyan: #26ade4;
-
-  --color-background: var(--palette-white);
-  --color-surface: var(--palette-white);
-  --color-foreground: var(--palette-black);
-
-  --color-primary: var(--palette-cyan);
-  --color-primary-foreground: var(--palette-white);
-
-  --color-secondary: var(--palette-sky);
-  --color-accent: var(--palette-accent);
-
-  --color-muted: #6b7280; /* neutral for captions */
-  --color-border: #e6e7eb;
-
-  /* states */
-  --color-success: #16a34a;
-  --color-warning: #f59e0b;
-  --color-error: #dc2626;
-
-  /* typography tokens (font variables set by layout.tsx) */
-  --font-sans: var(--font-geist-sans, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial);
-  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace);
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
-/* Dark theme tokens (respects user's system preference) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #0b1220; /* deep background */
-    --color-surface: #071024;
-    --color-foreground: #e6eef8;
-
-    --color-primary: #60a5fa; /* lighter indigo for dark */
-    --color-primary-foreground: #0b1220;
-
-    --color-secondary: #67f8ff;
-    --color-accent: #ff7b7b;
-
-    --color-muted: #9ca3af;
-    --color-border: #122032;
-
-    --color-success: #34d399;
-    --color-warning: #fbbf24;
-    --color-error: #f87171;
+    --background: #0a0a0a;
+    --foreground: #ededed;
   }
 }
 
-/* Font variables are set in layout.tsx via next/font and are available as
-   --font-geist-sans / --font-geist-mono. No special at-rule required. */
-
-/* Base element styles */
-html, body, #__next {
-  height: 100%;
-}
-
 body {
-  margin: 0;
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Tiny utilities mapped to tokens (works well with Tailwind) */
-.bg-primary { background-color: var(--color-primary); }
-.text-primary { color: var(--color-primary); }
-.text-muted { color: var(--color-muted); }
-.bg-surface { background-color: var(--color-surface); }
-.border-token { border-color: var(--color-border); }
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
-}
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-}
-.btn-outline {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-foreground);
-}
-
-/* Swatch helpers for the demo page */
-.swatch {
-  width: 100%;
-  height: 64px;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(16,24,40,0.04);
-}
-.swatch-label {
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-  color: var(--color-muted);
-}
-
-/* Small card */
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  padding: 1rem;
-  border-radius: 12px;
-}
-
-/* Responsive container helper (optional) */
-.container-centered {
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
