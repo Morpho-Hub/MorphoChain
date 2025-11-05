@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { es } from '@/locales';
 
 interface UserMenuProps {
   /**
@@ -16,12 +17,11 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ avatarUrl, userName = 'Usuario' }) => {
+  const t = es.userMenu;
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
-    { label: 'Mercado', href: '/mercado' },
-    { label: 'Inversión', href: '/inversion' },
-    { label: 'Información', href: '/informacion' },
+    { label: t.profile, href: '/perfil' },
   ];
 
   return (
@@ -76,7 +76,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ avatarUrl, userName = 'Usuario' }) 
                 console.log('Cerrar sesión');
               }}
             >
-              Cerrar sesión
+              {t.logout}
             </button>
           </div>
         </>
