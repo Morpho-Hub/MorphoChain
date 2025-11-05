@@ -1,7 +1,7 @@
 export { default as Chip } from './Chip';
+export { default as Input } from './Input';
 export { default as Button } from './button';
 export { default as Label } from './Label';
-export { default as Input } from './Input';
 export { default as Card } from './Card';
 export { default as StatCard } from './StatCard';
 export { default as GoogleIcon } from './GoogleIcon';
