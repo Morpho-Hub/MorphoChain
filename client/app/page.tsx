@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Chip } from "@/src/atoms";
 
 export default function Home() {
   return (
@@ -13,6 +14,15 @@ export default function Home() {
           priority
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          {/* Ejemplos de Chips */}
+          <div className="flex flex-wrap gap-3">
+            <Chip emoji="🌱" label="Plataforma de Finanzas Regenerativas" variant="success" />
+            <Chip emoji="📊" label="Dashboard" variant="primary" />
+            <Chip emoji="🚀" variant="info" />
+            <Chip label="Nuevo" variant="warning" size="sm" />
+            <Chip emoji="💎" label="Premium" variant="secondary" size="lg" />
+          </div>
+          
           <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
             To get started, edit the page.tsx file.
           </h1>
