@@ -22,7 +22,7 @@ const Button: FC<ButtonProps> = ({
 
   const variants: Record<ButtonProps["variant"], string> = {
     blue: 
-        "bg-blue-500 text-black px-4 py-2 hover:bg-blue-600 active:scale-95",
+        "!bg-[#26ade4] hover:!bg-[#1e8bb8] !text-white !px-6 shadow-morpho",
 
     white_bordered:
       "bg-white text-black border border-black px-4 py-2 hover:bg-gray-100 active:scale-95",
