@@ -5,3 +5,8 @@ export { default as AuthCard } from './AuthCard';
 export { Footer } from './Footer';
 export { default as Navbar } from './Navbar';
 export { default as ProfileSettings } from './ProfileSettings';
+export { default as FarmerDashboard } from './FarmerDashboard';
+export { default as FarmForm } from './FarmForm';
+export { default as ProductListingForm } from './ProductListingForm';
+export { default as EnvironmentalSurvey } from './EnvironmentalSurvey';
+export { default as VerificationAlert } from './VerificationAlert';

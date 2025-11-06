@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { es } from '@/locales';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserMenuProps {
   /**
@@ -18,10 +20,21 @@ interface UserMenuProps {
 
 const UserMenu: React.FC<UserMenuProps> = ({ avatarUrl, userName = 'Usuario' }) => {
   const t = es.userMenu;
+  const router = useRouter();
+  const { logout, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleLogout = () => {
+    setIsOpen(false);
+    logout();
+    router.push('/');
+  };
+
+  // Menu items dinámicos según el rol del usuario
   const menuItems = [
     { label: t.profile, href: '/perfil' },
+    ...(user?.role === 'farmer' ? [{ label: 'Panel de Agricultor', href: '/panel-agricultor' }] : []),
+    ...(user?.role === 'investor' ? [{ label: 'Panel de Inversor', href: '/panel-inversor' }] : []),
   ];
 
   return (
@@ -70,11 +83,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ avatarUrl, userName = 'Usuario' }) 
             <hr className="my-2 border-gray-200" />
             <button
               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
-              onClick={() => {
-                setIsOpen(false);
-                // Aquí iría la lógica de logout
-                console.log('Cerrar sesión');
-              }}
+              onClick={handleLogout}
             >
               {t.logout}
             </button>

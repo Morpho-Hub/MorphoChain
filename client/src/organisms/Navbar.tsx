@@ -1,48 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Leaf } from 'lucide-react';
 import Button from '@/src/atoms/button';
 import { UserMenu } from '@/src/molecules';
 import { es } from '@/locales';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface NavbarProps {
-  /**
-   * Indica si el usuario está autenticado
-   */
-  isLoggedIn?: boolean;
-  /**
-   * URL del avatar del usuario (opcional)
-   */
-  avatarUrl?: string;
-  /**
-   * Nombre del usuario
-   */
-  userName?: string;
-  /**
-   * Callback para el botón "Comenzar"
-   */
-  onGetStarted?: () => void;
-}
-
-const Navbar: React.FC<NavbarProps> = ({
-  isLoggedIn: initialIsLoggedIn = false,
-  avatarUrl,
-  userName = 'Usuario',
-  onGetStarted,
-}) => {
+const Navbar: React.FC = () => {
   const t = es.navbar;
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(initialIsLoggedIn);
+  const { isLoggedIn, user } = useAuth();
 
   const handleGetStarted = () => {
-    if (onGetStarted) {
-      onGetStarted();
-    } else {
-      router.push('/login-register');
-    }
+    router.push('/login-register');
   };
   const menuLinks = [
     { label: es.userMenu.market, href: '/mercado' },
@@ -82,7 +55,7 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* Right side - Auth buttons or User Menu */}
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
-              <UserMenu avatarUrl={avatarUrl} userName={userName} />
+              <UserMenu avatarUrl={user?.avatar} userName={user?.name || 'Usuario'} />
             ) : (
               <Button
                 title={t.getStarted}
