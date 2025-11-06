@@ -11,5 +11,4 @@ export { default as FarmCard } from './FarmCard';
 export { default as ProductListingCard } from './ProductListingCard';
 export { default as Modal } from './Modal';
 export { default as SearchBar } from './SearchBar';
-export { InvestmentList } from './InvestmentList';
 export { default as ProductInventoryCard } from './ProductInventoryCard';
