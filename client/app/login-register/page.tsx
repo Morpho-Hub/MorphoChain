@@ -1,6 +1,6 @@
 "use client";
 
-import { LoginRegister } from "../LoginRegister";
+import { LoginRegister } from "./LoginRegister";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
