@@ -1,33 +1,47 @@
 'use client';
 
 import React from 'react';
-import { MapPin, Edit2, Trash2, ShoppingBag } from 'lucide-react';
+import { MapPin, Edit2, Trash2 } from 'lucide-react';
 import { Chip } from '@/src/atoms';
 import { es } from '@/locales';
+
+export interface EnvironmentalMetrics {
+  carbonReduction: number; // toneladas CO2
+  waterSaved: number; // m³
+  biodiversityIndex: number; // 0-100
+  soilHealth: number; // 0-100
+  lastVerificationDate: string;
+  nextVerificationDate: string;
+  verificationStatus: 'pending' | 'verified' | 'expired';
+}
 
 export interface Farm {
   id: string;
   name: string;
   location: string;
   description: string;
-  estimatedEarnings: number;
-  receivedEarnings: number;
+  estimatedEarnings: number; // Total estimado (productos + tokens)
+  receivedEarnings: number; // Total recibido (productos + tokens)
+  productSalesEarnings: number; // Ingresos por venta de productos
+  tokenEarnings: number; // Ingresos pasivos por tokenización
   products: string[];
   productsCount: number;
   sustainability: number;
   practices: number;
+  images?: string[];
+  certifications?: string[];
+  environmentalMetrics?: EnvironmentalMetrics;
 }
 
 interface FarmCardProps {
   farm: Farm;
   onEdit?: (farm: Farm) => void;
   onDelete?: (farmId: string) => void;
-  onSellProduct?: (farm: Farm) => void;
+  onViewDetails?: (farm: Farm) => void;
 }
 
-const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onSellProduct }) => {
+const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onViewDetails }) => {
   const t = es.farmerDashboard;
-  const tListing = es.productListing;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CR', {
@@ -39,7 +53,10 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onSellProdu
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-morpho transition-all">
+    <div 
+      className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-morpho transition-all cursor-pointer"
+      onClick={() => onViewDetails?.(farm)}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -53,7 +70,10 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onSellProdu
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => onEdit?.(farm)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(farm);
+            }}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             style={{ color: 'var(--morpho-blue)' }}
             title={t.edit}
@@ -61,7 +81,10 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onSellProdu
             <Edit2 className="w-5 h-5" />
           </button>
           <button
-            onClick={() => onDelete?.(farm.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(farm.id);
+            }}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title={t.delete}
           >
@@ -94,7 +117,7 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onSellProdu
       </div>
 
       {/* Products */}
-      <div className="mb-4">
+      <div className="mb-6">
         <p className="text-xs font-medium text-gray-600 mb-2">
           {t.mainProducts}:
         </p>
@@ -109,15 +132,6 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onSellProdu
           ))}
         </div>
       </div>
-
-      {/* Sell Product Button */}
-      <button
-        onClick={() => onSellProduct?.(farm)}
-        className="w-full gradient-green text-black px-4 py-3 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all font-medium mb-4"
-      >
-        <ShoppingBag className="w-5 h-5" />
-        {tListing.sellProduct}
-      </button>
 
       {/* Footer Stats */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200 text-sm">

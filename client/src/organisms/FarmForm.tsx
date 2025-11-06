@@ -5,6 +5,7 @@ import { X, Plus, Upload, Check } from 'lucide-react';
 import { Input } from '@/src/atoms';
 import { es } from '@/locales';
 import type { Farm } from '@/src/molecules/FarmCard';
+import EnvironmentalSurvey from './EnvironmentalSurvey';
 
 interface Product {
   cropType: string;
@@ -12,11 +13,19 @@ interface Product {
   price: number;
 }
 
+interface EnvironmentalMetrics {
+  carbonReduction: number;
+  waterSaved: number;
+  biodiversityIndex: number;
+  soilHealth: number;
+}
+
 interface FarmFormProps {
   farm?: Farm;
   onSave: (farm: Omit<Farm, 'id'>) => void;
   onCancel: () => void;
   isSaving?: boolean;
+  requireEnvironmentalSurvey?: boolean; // Solo para nuevas fincas
 }
 
 interface FormErrors {
@@ -33,9 +42,11 @@ const FarmForm: React.FC<FarmFormProps> = ({
   onSave,
   onCancel,
   isSaving = false,
+  requireEnvironmentalSurvey = false,
 }) => {
   const t = es.farmForm;
   const [currentStep, setCurrentStep] = useState(1);
+  const [showEnvironmentalSurvey, setShowEnvironmentalSurvey] = useState(false);
 
   // Paso 1: Información básica
   const [formData, setFormData] = useState({
@@ -150,22 +161,55 @@ const FarmForm: React.FC<FarmFormProps> = ({
 
   const handleSubmit = () => {
     if (validateStep2()) {
-      // Calcular datos derivados
-      const productNames = products.map(p => p.cropType);
-      const avgPrice = products.reduce((sum, p) => sum + p.price, 0) / products.length;
-      
-      onSave({
-        name: formData.name,
-        location: formData.location,
-        description: formData.description,
-        products: productNames,
-        productsCount: products.length,
-        sustainability: Math.min(selectedPractices.length * 10, 100), // 10% por práctica, máx 100%
-        practices: selectedPractices.length,
-        estimatedEarnings: Math.round(avgPrice * 100), // Estimación simple
-        receivedEarnings: 0,
-      });
+      // Si es una nueva finca, mostrar encuesta ambiental
+      if (!farm && requireEnvironmentalSurvey) {
+        setShowEnvironmentalSurvey(true);
+      } else {
+        // Si es edición o no requiere encuesta, guardar directamente
+        saveFarm(null);
+      }
     }
+  };
+
+  const handleEnvironmentalSurveyComplete = (metrics: EnvironmentalMetrics) => {
+    setShowEnvironmentalSurvey(false);
+    saveFarm(metrics);
+  };
+
+  const saveFarm = (metrics: EnvironmentalMetrics | null) => {
+    // Calcular datos derivados
+    const productNames = products.map(p => p.cropType);
+    const avgPrice = products.reduce((sum, p) => sum + p.price, 0) / products.length;
+    
+    const farmData: Partial<Farm> = {
+      name: formData.name,
+      location: formData.location,
+      description: formData.description,
+      products: productNames,
+      productsCount: products.length,
+      sustainability: Math.min(selectedPractices.length * 10, 100), // 10% por práctica, máx 100%
+      practices: selectedPractices.length,
+      estimatedEarnings: Math.round(avgPrice * 100), // Estimación simple
+      receivedEarnings: 0,
+      productSalesEarnings: 0,
+      tokenEarnings: 0,
+    };
+
+    // Agregar métricas ambientales si existen
+    if (metrics) {
+      const today = new Date();
+      const nextMonth = new Date(today);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      farmData.environmentalMetrics = {
+        ...metrics,
+        lastVerificationDate: today.toISOString(),
+        nextVerificationDate: nextMonth.toISOString(),
+        verificationStatus: 'pending' as const,
+      };
+    }
+
+    onSave(farmData as Omit<Farm, 'id'>);
   };
 
   const getStepTitle = () => {
@@ -178,8 +222,8 @@ const FarmForm: React.FC<FarmFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -485,6 +529,14 @@ const FarmForm: React.FC<FarmFormProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Environmental Survey Modal */}
+      {showEnvironmentalSurvey && (
+        <EnvironmentalSurvey
+          onComplete={handleEnvironmentalSurveyComplete}
+          onCancel={() => setShowEnvironmentalSurvey(false)}
+        />
+      )}
     </div>
   );
 };
