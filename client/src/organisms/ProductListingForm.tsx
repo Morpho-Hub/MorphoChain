@@ -14,7 +14,6 @@ export interface ProductListing {
   unit: string;
   pricePerUnit: number;
   harvestDate: string;
-  quality: 'premium' | 'standard' | 'organic';
   description: string;
   images: string[];
   certifications?: string[];
@@ -36,7 +35,6 @@ interface FormErrors {
   unit?: string;
   pricePerUnit?: string;
   harvestDate?: string;
-  quality?: string;
   description?: string;
 }
 
@@ -56,7 +54,6 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
     unit: listing?.unit || '',
     pricePerUnit: listing?.pricePerUnit || 0,
     harvestDate: listing?.harvestDate || '',
-    quality: listing?.quality || 'standard' as 'premium' | 'standard' | 'organic',
     description: listing?.description || '',
   });
 
@@ -112,9 +109,6 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
     if (!formData.harvestDate) {
       newErrors.harvestDate = t.errors.harvestDateRequired;
     }
-    if (!formData.quality) {
-      newErrors.quality = t.errors.qualityRequired;
-    }
     if (!formData.description.trim()) {
       newErrors.description = t.errors.descriptionRequired;
     }
@@ -133,7 +127,6 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
         unit: formData.unit,
         pricePerUnit: formData.pricePerUnit,
         harvestDate: formData.harvestDate,
-        quality: formData.quality,
         description: formData.description,
         images: imagePreviewUrls,
         available: true,
@@ -144,8 +137,8 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
   const totalValue = formData.quantity * formData.pricePerUnit;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -250,46 +243,24 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
             </div>
           </div>
 
-          {/* Fecha de Cosecha y Calidad */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                {t.harvestDate} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  name="harvestDate"
-                  value={formData.harvestDate}
-                  onChange={handleInputChange}
-                  className={errors.harvestDate ? 'border-red-500' : ''}
-                />
-                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-              </div>
-              {errors.harvestDate && (
-                <p className="mt-1 text-sm text-red-500">{errors.harvestDate}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                {t.quality} <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="quality"
-                value={formData.quality}
+          {/* Fecha de Cosecha */}
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              {t.harvestDate} <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Input
+                type="date"
+                name="harvestDate"
+                value={formData.harvestDate}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26ade4] ${
-                  errors.quality ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="standard">{t.qualityStandard}</option>
-                <option value="premium">{t.qualityPremium}</option>
-                <option value="organic">{t.qualityOrganic}</option>
-              </select>
-              {errors.quality && (
-                <p className="mt-1 text-sm text-red-500">{errors.quality}</p>
-              )}
+                className={errors.harvestDate ? 'border-red-500' : ''}
+              />
+              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
             </div>
+            {errors.harvestDate && (
+              <p className="mt-1 text-sm text-red-500">{errors.harvestDate}</p>
+            )}
           </div>
 
           {/* Descripción */}

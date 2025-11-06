@@ -1,4 +1,5 @@
 import React from 'react';
+import type { LucideIcon } from 'lucide-react';
 
 interface ChipProps {
   /**
@@ -9,6 +10,10 @@ interface ChipProps {
    * Emoji o ícono a mostrar
    */
   emoji?: string;
+  /**
+   * Icono de Lucide React
+   */
+  icon?: LucideIcon;
   /**
    * Color de fondo del chip
    */
@@ -26,13 +31,14 @@ interface ChipProps {
 const Chip: React.FC<ChipProps> = ({
   label,
   emoji,
+  icon: Icon,
   variant = 'default',
   size = 'md',
   className = '',
 }) => {
-  // Validación: debe tener al menos label o emoji
-  if (!label && !emoji) {
-    console.warn('Chip debe tener al menos un label o emoji');
+  // Validación: debe tener al menos label, emoji o icon
+  if (!label && !emoji && !Icon) {
+    console.warn('Chip debe tener al menos un label, emoji o icon');
     return null;
   }
 
@@ -56,17 +62,27 @@ const Chip: React.FC<ChipProps> = ({
     lg: 'px-4 py-2 text-base',
   };
 
-  // Tamaño del emoji según el tamaño del chip
+  // Tamaño del emoji/icon según el tamaño del chip
   const emojiSizeStyles = {
     sm: 'text-sm',
     md: 'text-base',
     lg: 'text-lg',
   };
 
+  // Tamaño del icono de Lucide
+  const iconSizeMap = {
+    sm: 14,
+    md: 16,
+    lg: 18,
+  };
+
   return (
     <span
       className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
     >
+      {Icon && (
+        <Icon size={iconSizeMap[size]} className="flex-shrink-0" />
+      )}
       {emoji && (
         <span className={emojiSizeStyles[size]} role="img" aria-label="chip-icon">
           {emoji}

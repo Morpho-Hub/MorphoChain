@@ -32,28 +32,6 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
     });
   };
 
-  const getQualityColor = (quality: string) => {
-    switch (quality) {
-      case 'premium':
-        return 'success';
-      case 'organic':
-        return 'info';
-      default:
-        return 'warning';
-    }
-  };
-
-  const getQualityLabel = (quality: string) => {
-    switch (quality) {
-      case 'premium':
-        return t.qualityPremium;
-      case 'organic':
-        return t.qualityOrganic;
-      default:
-        return t.qualityStandard;
-    }
-  };
-
   const totalValue = listing.quantity * listing.pricePerUnit;
 
   return (
@@ -84,19 +62,12 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
 
       {/* Contenido */}
       <div className="p-5">
-        {/* Header con nombre y calidad */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-black mb-1">
-              {listing.productName}
-            </h3>
-            <p className="text-sm text-gray-600">{listing.farmName}</p>
-          </div>
-          <Chip
-            label={getQualityLabel(listing.quality)}
-            variant={getQualityColor(listing.quality)}
-            size="sm"
-          />
+        {/* Header con nombre */}
+        <div className="mb-3">
+          <h3 className="text-lg font-semibold text-black mb-1">
+            {listing.productName}
+          </h3>
+          <p className="text-sm text-gray-600">{listing.farmName}</p>
         </div>
 
         {/* Descripción */}

@@ -2,11 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FarmerDashboard, FarmForm, ProductListingForm } from '@/src/organisms';
-import { ProductListingCard } from '@/src/molecules';
+import { FarmerDashboard, FarmForm } from '@/src/organisms';
 import type { Farm } from '@/src/molecules/FarmCard';
-import type { ProductListing } from '@/src/organisms/ProductListingForm';
-import { es } from '@/locales';
 
 export default function FarmerDashboardPage() {
   const router = useRouter();
@@ -20,6 +17,8 @@ export default function FarmerDashboardPage() {
       description: 'Finca especializada en café orgánico de altura',
       estimatedEarnings: 45600,
       receivedEarnings: 32400,
+      productSalesEarnings: 28900,
+      tokenEarnings: 3500,
       products: ['Café Arábica', 'Café Robusta'],
       productsCount: 2,
       sustainability: 92,
@@ -32,6 +31,8 @@ export default function FarmerDashboardPage() {
       description: 'Cultivo diversificado de vegetales y hortalizas',
       estimatedEarnings: 28300,
       receivedEarnings: 21500,
+      productSalesEarnings: 18700,
+      tokenEarnings: 2800,
       products: ['Tomate Cherry', 'Lechuga', 'Zanahoria'],
       productsCount: 3,
       sustainability: 88,
@@ -42,13 +43,6 @@ export default function FarmerDashboardPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
-
-  // Estados para productos en venta
-  const [productListings, setProductListings] = useState<ProductListing[]>([]);
-  const [showListingForm, setShowListingForm] = useState(false);
-  const [selectedFarm, setSelectedFarm] = useState<Farm | undefined>(undefined);
-
-  const t = es.productListing;
 
   const handleAddFarm = () => {
     setEditingFarm(undefined);
@@ -102,37 +96,8 @@ export default function FarmerDashboardPage() {
     router.push('/mercado');
   };
 
-  const handleSellProduct = (farm: Farm) => {
-    setSelectedFarm(farm);
-    setShowListingForm(true);
-  };
-
-  const handleSaveProductListing = async (listingData: Omit<ProductListing, 'id'>) => {
-    setIsSaving(true);
-    
-    // Simular llamada a API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const newListing: ProductListing = {
-      ...listingData,
-      id: Date.now().toString(),
-    };
-    
-    setProductListings([...productListings, newListing]);
-    setIsSaving(false);
-    setShowListingForm(false);
-    setSelectedFarm(undefined);
-  };
-
-  const handleCancelListingForm = () => {
-    setShowListingForm(false);
-    setSelectedFarm(undefined);
-  };
-
-  const handleDeleteListing = (listingId: string) => {
-    if (confirm(t.deleteConfirm)) {
-      setProductListings(productListings.filter(listing => listing.id !== listingId));
-    }
+  const handleViewDetails = (farm: Farm) => {
+    router.push(`/finca/${farm.id}`);
   };
 
   return (
@@ -144,26 +109,8 @@ export default function FarmerDashboardPage() {
         onEditFarm={handleEditFarm}
         onDeleteFarm={handleDeleteFarm}
         onViewMarket={handleViewMarket}
-        onSellProduct={handleSellProduct}
+        onViewDetails={handleViewDetails}
       />
-
-      {/* Sección de Productos en Venta */}
-      {productListings.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <h2 className="text-2xl font-semibold text-black mb-6">
-            {t.activeListings}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {productListings.map((listing) => (
-              <ProductListingCard
-                key={listing.id}
-                listing={listing}
-                onDelete={handleDeleteListing}
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       {showForm && (
         <FarmForm
@@ -171,16 +118,7 @@ export default function FarmerDashboardPage() {
           onSave={handleSaveFarm}
           onCancel={handleCancelForm}
           isSaving={isSaving}
-        />
-      )}
-
-      {showListingForm && selectedFarm && (
-        <ProductListingForm
-          farmId={selectedFarm.id}
-          farmName={selectedFarm.name}
-          onSave={handleSaveProductListing}
-          onCancel={handleCancelListingForm}
-          isSaving={isSaving}
+          requireEnvironmentalSurvey={!editingFarm} // Solo para nuevas fincas
         />
       )}
     </>

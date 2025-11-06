@@ -14,7 +14,7 @@ interface FarmerDashboardProps {
   onEditFarm?: (farm: Farm) => void;
   onDeleteFarm?: (farmId: string) => void;
   onViewMarket?: () => void;
-  onSellProduct?: (farm: Farm) => void;
+  onViewDetails?: (farm: Farm) => void;
 }
 
 const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
@@ -24,7 +24,7 @@ const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
   onEditFarm,
   onDeleteFarm,
   onViewMarket,
-  onSellProduct,
+  onViewDetails,
 }) => {
   const t = es.farmerDashboard;
 
@@ -142,7 +142,7 @@ const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
                   farm={farm}
                   onEdit={onEditFarm}
                   onDelete={onDeleteFarm}
-                  onSellProduct={onSellProduct}
+                  onViewDetails={onViewDetails}
                 />
               ))}
             </div>
