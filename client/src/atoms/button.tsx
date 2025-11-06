@@ -7,6 +7,7 @@ interface ButtonProps {
   icon?: ReactNode;
   iconPosition?: "left" | "right";
   className?: string;
+  disabled?: boolean;
 }
 
 const Button: FC<ButtonProps> = ({
@@ -16,6 +17,7 @@ const Button: FC<ButtonProps> = ({
   icon,
   iconPosition = "left",
   className = "",
+  disabled = false,
 }) => {
 
   const base = "inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-all";
@@ -38,7 +40,11 @@ const Button: FC<ButtonProps> = ({
   };
 
   return (
-    <button onClick={onClick} className={`${base} ${variants[variant]} ${className}`}>
+    <button 
+      onClick={onClick} 
+      disabled={disabled}
+      className={`${base} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
       {icon && iconPosition === "left" && icon}
       {title && <span>{title}</span>}
       {icon && iconPosition === "right" && icon}
