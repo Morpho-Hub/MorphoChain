@@ -1,10 +1,15 @@
 "use client"
+import { useRouter } from 'next/navigation';
 import { Chip } from "@/src/atoms";
 import Button from "@/src/atoms/button";
 import { TileOutlined } from "@/src/atoms/TileOutlined";
+import { useAuth } from '@/contexts/AuthContext';
 import { ChartLine, Coins, Droplet, Globe, Leaf, Shield, Sprout, BarChart3, Users, TrendingUp } from "lucide-react";
 
 export default function Home() {
+  const router = useRouter();
+  const { isLoggedIn, user } = useAuth();
+  
   return (
     <main className="w-full flex flex-col">
 
@@ -25,7 +30,7 @@ export default function Home() {
             </p>
 
             <div className="flex gap-4">
-              <Button title="Comenzar a invertir" variant="blue" className="px-8 py-4 text-lg"/>
+              <Button title="Comenzar a invertir" variant="blue" className="px-8 py-4 text-lg" onClick={() => {router.push('/login-register')}}/>
               <Button title="Conocer más" variant="white_bordered" className="px-8 py-4 text-lg"/>
             </div>
           </div>
@@ -185,7 +190,7 @@ export default function Home() {
           </div>
 
           {/* Botón */}
-          <Button title="Ver Oportunidades de Inversión" variant="blue" className="px-8 py-4 text-lg" />
+          <Button title="Ver Oportunidades de Inversión" variant="blue" className="px-8 py-4 text-lg" onClick={() => isLoggedIn ? router.push('/investor-dashboard') : router.push('/login-register')} />
         </div>
       </div>
     </section>
@@ -244,8 +249,8 @@ export default function Home() {
         </p>
 
         <div className="flex justify-center gap-4">
-          <Button title="Comienza Hoy" variant="blue" onClick={() => {}} />
-          <Button title="Explorar Mercado" variant="white_bordered" onClick={() => {}} />
+          <Button title="Comienza Hoy" variant="blue" onClick={() => {router.push('/login-register')}} />
+          <Button title="Explorar Mercado" variant="white_bordered" onClick={() => isLoggedIn ? router.push('/mercado') : router.push('/login-register')} />
         </div>
       </section>
 

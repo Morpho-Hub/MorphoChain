@@ -5,7 +5,7 @@ interface InvestmentItemProps {
   name: string;
   location: string;
   invested: string;
-  progress: number;
+  progress: number; // porcentaje del 0 al 100
   roi: string;
 }
 

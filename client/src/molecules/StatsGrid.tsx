@@ -1,5 +1,6 @@
 import React, { FC } from "react";
-import StatCard from "@/src/atoms/StatCard";
+import { StatCard } from "../atoms";
+
 
 interface StatsGridProps {
   stats: Array<{
