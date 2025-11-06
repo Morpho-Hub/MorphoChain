@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Leaf } from 'lucide-react';
@@ -13,10 +13,16 @@ const Navbar: React.FC = () => {
   const t = es.navbar;
   const router = useRouter();
   const { isLoggedIn, user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleGetStarted = () => {
     router.push('/login-register');
   };
+  
   const menuLinks = [
     { label: es.userMenu.market, href: '/mercado' },
     { label: es.userMenu.investment, href: '/inversion' },
@@ -38,7 +44,7 @@ const Navbar: React.FC = () => {
           </Link>
 
           {/* Center - Navigation Links (only when logged in) */}
-          {isLoggedIn && (
+          {mounted && isLoggedIn && (
             <div className="hidden md:flex items-center gap-8">
               {menuLinks.map((link, index) => (
                 <Link
@@ -54,7 +60,7 @@ const Navbar: React.FC = () => {
 
           {/* Right side - Auth buttons or User Menu */}
           <div className="flex items-center gap-3">
-            {isLoggedIn ? (
+            {mounted && isLoggedIn ? (
               <UserMenu avatarUrl={user?.avatar} userName={user?.name || 'Usuario'} />
             ) : (
               <Button

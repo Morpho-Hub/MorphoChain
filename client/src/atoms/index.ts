@@ -10,3 +10,7 @@ export { default as Heading } from './Heading';
 export { default as Text } from './Text';
 export { TileFilled } from './TileFilled';
 export { TileOutlined } from './TileOutlined';
+export { default as Badge } from './Badge';
+export { default as Progress } from './Progress';
+export { default as Select } from './Select';
+export { default as Separator } from './Separator';
