@@ -17,9 +17,10 @@ const Navbar: React.FC = () => {
   const handleGetStarted = () => {
     router.push('/login-register');
   };
+  
   const menuLinks = [
     { label: es.userMenu.market, href: '/mercado' },
-    { label: es.userMenu.investment, href: '/inversion' },
+    { label: es.userMenu.investment, href: '/invertir' },
     { label: es.userMenu.information, href: '/informacion' },
   ];
 
