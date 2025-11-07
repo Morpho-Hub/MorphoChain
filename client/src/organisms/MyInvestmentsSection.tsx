@@ -2,15 +2,18 @@ import Card from '../atoms/Card';
 import Button from '../atoms/button';
 import { Typography } from '../atoms/Typography';
 import { InvestmentCard, InvestmentData } from '../organisms/InvestmentCard';
+import router from 'next/router';
 
 interface MyInvestmentsSectionProps {
   investments: InvestmentData[];
   className?: string;
+  onClick?: () => void;
 }
 
 export const MyInvestmentsSection = ({
   investments,
-  className = ''
+  className = '',
+  onClick,
 }: MyInvestmentsSectionProps) => {
   return (
     <Card className={`p-6 ${className}`}>
@@ -20,6 +23,7 @@ export const MyInvestmentsSection = ({
           title = 'Agregar Más'
           variant="white_bordered"
           className="border-black text-black hover:bg-black"
+          onClick={onClick}
         >
         </Button>
       </div>

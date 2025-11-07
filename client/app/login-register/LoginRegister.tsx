@@ -28,7 +28,7 @@ export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
     onLogin(role);
     // Navigate to appropriate dashboard
     if (role === "farmer") {
-      onNavigate("farmer-dashboard");
+      onNavigate("panel-agricultor");
     } else {
       onNavigate("investor-dashboard");
     }

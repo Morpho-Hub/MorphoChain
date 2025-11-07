@@ -532,12 +532,16 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                           <Input
                             type="number"
                             placeholder="0"
+                            min="0"
                             className="w-20"
-                            value={productQuantity[product.name] || ''}
-                            onChange={(e) => setProductQuantity({
-                              ...productQuantity,
-                              [product.name]: parseInt(e.target.value) || 0
-                            })}
+                            value={productQuantity[product.name] ?? ''}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              setProductQuantity({
+                                ...productQuantity,
+                                [product.name]: isNaN(value) ? 0 : Math.max(0, value),
+                              });
+                            }}
                           />
                         </div>
                       ))}

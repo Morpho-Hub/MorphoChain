@@ -5,11 +5,36 @@ import Button from "@/src/atoms/button";
 import { TileOutlined } from "@/src/atoms/TileOutlined";
 import { useAuth } from '@/contexts/AuthContext';
 import { ChartLine, Coins, Droplet, Globe, Leaf, Shield, Sprout, BarChart3, Users, TrendingUp } from "lucide-react";
+import { es } from '@/locales';
 
 export default function Home() {
+  const t = es.landingPage;
   const router = useRouter();
   const { isLoggedIn, user } = useAuth();
   
+  const averageAnnualReturn = 12.5;
+  const numberOfFarmers = 250;
+  const totalInvested = 2400000;
+  const numberOfHec = 1200; 
+
+  const soilHealth = 85;
+  const co2Sequestration = 12000;
+  const biodiversity = 40;
+  const waterConservation = 68;
+
+  const formatNumber = (value: number | string): string => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;    
+    if (isNaN(num)) {return '0';}
+    const absoluteValue = Math.abs(num);
+    const sign = num < 0 ? '-' : '';
+    if (absoluteValue >= 1000000000) {return sign + (absoluteValue / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';}
+    if (absoluteValue >= 1000000) {return sign + (absoluteValue / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';}
+    if (absoluteValue >= 1000) {return sign + (absoluteValue / 1000).toFixed(1).replace(/\.0$/, '') + 'K';}
+    if (absoluteValue === 0) return '0';
+    if (absoluteValue < 1) {return sign + absoluteValue.toFixed(2);}
+    return sign + (absoluteValue % 1 === 0 ? absoluteValue.toString() : absoluteValue.toFixed(1));
+  };
+
   return (
     <main className="w-full flex flex-col">
 
@@ -18,20 +43,24 @@ export default function Home() {
 
           {/* Texto */}
           <div>
-            <Chip icon={Leaf} size='lg' label="Plataforma de Finanzas Regenerativas" className="mb-4" />
+            <Chip icon={Leaf} size='lg' variant="success"  label="Plataforma de Finanzas Regenerativas" className="mb-4" />
 
             <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
-              Tokenizando el Futuro Regenerativo de Costa Rica
+              {t.LANDING_TEXTS.title}
             </h1>
 
             <p className="text-lg text-text-secondary mb-8 max-w-xl">
-              Conectamos agricultores con inversores conscientes mediante la tokenización agrícola. 
-              Construye riqueza mientras restauras el planeta, una cosecha a la vez.
+              {t.LANDING_TEXTS.subTitles}
             </p>
 
             <div className="flex gap-4">
-              <Button title="Comenzar a invertir" variant="blue" className="px-8 py-4 text-lg" onClick={() => {router.push('/login-register')}}/>
-              <Button title="Conocer más" variant="white_bordered" className="px-8 py-4 text-lg"/>
+              <Button
+              title={t.BUTTON_TEXTS.startInvesting}
+              variant="blue"
+              className="px-12 py-6 text-xl font-semibold rounded-lg"
+              onClick={() => {
+                router.push('/login-register');
+              }}/>
             </div>
           </div>
 
@@ -50,8 +79,8 @@ export default function Home() {
                   className="bg-white/90 backdrop-blur-md px-6 py-4"
                   leading={<TrendingUp className="w-10 h-10 mx-auto text-[#26ade4]" />}
                 >
-                  <p className="text-gray-600 mt-1 text-sm">Retorno Anual Promedio</p>
-                  <p className="text-4xl font-bold text-[#26ade4]">12.5%</p>
+                  <p className="text-gray-600 mt-1 text-sm">{t.LANDING_TEXTS.imageClip}</p>
+                  <p className="text-4xl font-boldtext-[#26ade4]">{averageAnnualReturn}%</p>
                 </TileOutlined>
               </div>
             </div>
@@ -61,25 +90,25 @@ export default function Home() {
         {/* Estadísticas */}
         <div className="flex flex-wrap gap-12 mt-16">
           <div>
-            <p className="text-4xl font-bold text-[#26ade4]">250+</p>
-            <p className="text-gray-600 text-sm mt-1">Agricultores</p>
+            <p className="text-4xl font-bold text-[#26ade4]">{formatNumber(numberOfFarmers)}+</p>
+            <p className="text-gray-600 text-sm mt-1">{t.LANDING_TEXTS.stadsClip01}</p>
           </div>
           <div>
-            <p className="text-4xl font-bold text-[#26ade4]">$2.4M</p>
-            <p className="text-gray-600 text-sm mt-1">Financiado</p>
+            <p className="text-4xl font-bold text-[#26ade4]">${formatNumber(totalInvested)}</p>
+            <p className="text-gray-600 text-sm mt-1">{t.LANDING_TEXTS.stadsClip02}</p>
           </div>
           <div>
-            <p className="text-4xl font-bold text-[#26ade4]">1.2K</p>
-            <p className="text-gray-600 text-sm mt-1">Hectáreas</p>
+            <p className="text-4xl font-bold text-[#26ade4]">{formatNumber(numberOfHec)}</p>
+            <p className="text-gray-600 text-sm mt-1">{t.LANDING_TEXTS.stadsClip03}</p>
           </div>
         </div>
       </section>
 
       {/* PARA AGRICULTORES */}
       <section className="max-w-6xl mx-auto px-8 md:px-0 py-24 text-center">
-        <h2 className="text-4xl font-semibold mb-4">Para Agricultores</h2>
+        <h2 className="text-4xl font-semibold mb-4">{t.LANDING_TEXTS.sectionFarmerTitle}</h2>
         <p className="text-text-secondary mb-12 max-w-2xl mx-auto">
-          Accede a capital, rastrea la sostenibilidad y construye relaciones transparentes con inversores conscientes
+          {t.LANDING_TEXTS.farmerDescription}
         </p>
 
         {/* Tus Cards */}
@@ -89,10 +118,10 @@ export default function Home() {
             }
           >
             <h3 className="text-xl font-semibold mb-3 text-[#243c0b]">
-              Tokeniza tus Activos
+              {t.FARMER_FEATURES.tokenize.title}
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Convierte tus activos agrícolas en tokens digitales y accede a financiamiento de inversores globales sin las barreras de los préstamos tradicionales.
+              {t.FARMER_FEATURES.tokenize.description}
             </p>
           </TileOutlined>
 
@@ -101,10 +130,10 @@ export default function Home() {
             }
           >
             <h3 className="text-xl font-semibold mb-3 text-[#243c0b]">
-              Rastrea Métricas de Impacto
+              {t.FARMER_FEATURES.metrics.title}
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Monitorea automáticamente la salud del suelo (S), secuestro de carbono (C) e índices de vegetación (V) para comprobar tus prácticas regenerativas.
+              {t.FARMER_FEATURES.metrics.description}
             </p>
           </TileOutlined>
 
@@ -112,26 +141,34 @@ export default function Home() {
             leading={ <Shield className="w-10 h-10 mx-auto" />}
           >
             <h3 className="text-xl font-semibold mb-3 text-[#243c0b]">
-              Confianza y Transparencia
+              {t.FARMER_FEATURES.trust.title}
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Las credenciales verificadas por blockchain muestran tus prácticas sostenibles y construyen credibilidad con compradores e inversores premium.
+              {t.FARMER_FEATURES.trust.description}
             </p>
           </TileOutlined>
         </div>
 
-        <Button title="Explorar Panel de Agricultor →" variant="blue" onClick={() => {}} className="px-8 py-4 text-lg"/>
+        <Button 
+          title={t.BUTTON_TEXTS.exploreFarmerPanel} 
+          variant="blue" 
+          onClick={() => {
+            isLoggedIn && user?.role === 'farmer'  
+              ? router.push('/investor-dashboard') 
+              : router.push('/login-register')
+          }} 
+          className="px-8 py-4 text-lg"
+        />
       </section>
 
-
-      {/* PARA INVERSORES */}
+    {/* PARA INVERSORES */}
 
     <section className="w-full py-24">
       {/* Título */}
       <div className="text-center max-w-3xl mx-auto mb-16 px-8">
-        <h2 className="text-4xl font-semibold mb-4">Para Inversores</h2>
+        <h2 className="text-4xl font-semibold mb-4">{t.LANDING_TEXTS.sectionInvestor}</h2>
         <p className="text-gray-600">
-          Invierte en agricultura regenerativa verificada con total transparencia e impacto medible
+          {t.LANDING_TEXTS.investorDescription}
         </p>
       </div>
 
@@ -153,10 +190,9 @@ export default function Home() {
               <Leaf className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold">Diversifica con Activos Reales</h3>
+              <h3 className="text-xl font-semibold">{t.INVESTOR_FEATURES.diversify.title}</h3>
               <p className="text-gray-600">
-                Accede a propiedad fraccionada de operaciones agrícolas desde $100.
-                Construye un portafolio que crece mientras haces el bien.
+                {t.INVESTOR_FEATURES.diversify.description}
               </p>
             </div>
           </div>
@@ -167,10 +203,9 @@ export default function Home() {
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
             <div>
-              <h3 className="text-xl font-semibold">Métricas de Impacto Verificadas</h3>
+              <h3 className="text-xl font-semibold">{t.INVESTOR_FEATURES.metrics.title}</h3>
               <p className="text-gray-600">
-                Rastrea datos reales de restauración de suelos, captura de carbono y biodiversidad,
-                todo validado en blockchain.
+                {t.INVESTOR_FEATURES.metrics.description}
               </p>
             </div>
           </div>
@@ -181,28 +216,32 @@ export default function Home() {
               <Users className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold">Conexión Directa con Agricultores</h3>
+              <h3 className="text-xl font-semibold">{t.INVESTOR_FEATURES.connection.title}</h3>
               <p className="text-gray-600">
-                Sabe exactamente a dónde va tu dinero. Habla con agricultores,
-                visita proyectos y observa el impacto de tu inversión.
+                {t.INVESTOR_FEATURES.connection.description}
               </p>
             </div>
           </div>
 
           {/* Botón */}
-          <Button title="Ver Oportunidades de Inversión" variant="blue" className="px-8 py-4 text-lg" onClick={() => isLoggedIn ? router.push('/investor-dashboard') : router.push('/login-register')} />
+          <Button 
+            title={t.BUTTON_TEXTS.viewInvestmentOpportunities} 
+            variant="blue" 
+            className="px-8 py-4 text-lg" 
+            onClick={() => isLoggedIn && user?.role === 'investor'  
+              ? router.push('/investor-dashboard') 
+              : router.push('/login-register')} 
+          />
         </div>
       </div>
     </section>
 
-
    <section className="text-center py-16 max-w-6xl mx-auto">
 
       {/* Título y descripción */}
-      <h2 className="text-4xl font-bold mb-4">Impacto de Sostenibilidad</h2>
+      <h2 className="text-4xl font-bold mb-4">{t.LANDING_TEXTS.sustainabilityTitle}</h2>
       <p className="text-gray-600 mb-12">
-        Cada token representa prácticas regenerativas verificadas e impacto
-        ambiental medible
+        {t.LANDING_TEXTS.sustainabilityDescription}
       </p>
 
       {/* Grid de tarjetas */}
@@ -210,29 +249,29 @@ export default function Home() {
         <TileOutlined
           leading={<Sprout className="w-10 h-10 mx-auto" />}
         >
-          <p className="text-3xl font-semibold">85%</p>
-          <p className="text-gray-600 mt-2">Mejora en Salud del Suelo</p>
+          <p className="text-3xl font-semibold">{soilHealth}%</p>
+          <p className="text-gray-600 mt-2">{t.SUSTAINABILITY_STATS.soilHealthText}</p>
         </TileOutlined>
 
         <TileOutlined
           leading={<Globe className="w-10 h-10 mx-auto" />}
         >
-          <p className="text-3xl font-semibold">12K</p>
-          <p className="text-gray-600 mt-2">Toneladas CO₂ Secuestradas</p>
+          <p className="text-3xl font-semibold">{formatNumber(co2Sequestration)}</p>
+          <p className="text-gray-600 mt-2">{t.SUSTAINABILITY_STATS.co2SequestrationText}</p>
         </TileOutlined>
 
         <TileOutlined
           leading={<Leaf className="w-10 h-10 mx-auto" />}
         >
-          <p className="text-3xl font-semibold">+42%</p>
-          <p className="text-gray-600 mt-2">Aumento en Biodiversidad</p>
+          <p className="text-3xl font-semibold">+{biodiversity}%</p>
+          <p className="text-gray-600 mt-2">{t.SUSTAINABILITY_STATS.biodiversityText}</p>
         </TileOutlined>
 
         <TileOutlined
           leading={<Droplet className="w-10 h-10 mx-auto" />}
         >
-          <p className="text-3xl font-semibold">68%</p>
-          <p className="text-gray-600 mt-2">Conservación de Agua</p>
+          <p className="text-3xl font-semibold">{waterConservation}%</p>
+          <p className="text-gray-600 mt-2">{t.SUSTAINABILITY_STATS.waterConservationText}</p>
         </TileOutlined>
       </div>
 
@@ -241,16 +280,24 @@ export default function Home() {
       {/* CTA FINAL */}
       <section className="w-full py-24 bg-black text-white text-center">
         <h2 className="text-3xl font-semibold mb-4">
-          ¿Listo para Unirte a la Revolución de Finanzas Regenerativas?
+          {t.LANDING_TEXTS.ctaTitle}
         </h2>
 
         <p className="text-white/70 mb-8 max-w-xl mx-auto">
-          Ya seas un agricultor buscando capital o un inversor en busca de impacto, MorphoChain te conecta con el futuro agrícola sostenible de Costa Rica.
+          {t.LANDING_TEXTS.ctaDescription}
         </p>
 
         <div className="flex justify-center gap-4">
-          <Button title="Comienza Hoy" variant="blue" onClick={() => {router.push('/login-register')}} />
-          <Button title="Explorar Mercado" variant="white_bordered" onClick={() => isLoggedIn ? router.push('/mercado') : router.push('/login-register')} />
+          <Button 
+            title={t.BUTTON_TEXTS.startToday} 
+            variant="blue" 
+            onClick={() => {router.push('/login-register')}} 
+          />
+          <Button 
+            title={t.BUTTON_TEXTS.exploreMarket} 
+            variant="white_bordered" 
+            onClick={() => isLoggedIn ? router.push('/mercado') : router.push('/login-register')} 
+          />
         </div>
       </section>
 

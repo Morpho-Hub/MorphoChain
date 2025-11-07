@@ -25,8 +25,7 @@ const Navbar: React.FC = () => {
   
   const menuLinks = [
     { label: es.userMenu.market, href: '/mercado' },
-    { label: es.userMenu.investment, href: '/inversion' },
-    { label: es.userMenu.information, href: '/informacion' },
+    { label: es.userMenu.information, href: '/' },
   ];
 
   return (

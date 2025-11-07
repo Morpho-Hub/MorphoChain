@@ -4,6 +4,8 @@ import { PortfolioPerformance } from '../organisms/PortfolioPerformance';
 import { LineChartData } from '../molecules/LineChart';
 
 interface PortfolioOverviewProps {
+  titlePortfolioDistribution?: string;
+  titlePortfolioPerformance?: string;
   portfolioData: PieChartData[];
   performanceData: LineChartData[];
   growth?: {
@@ -12,14 +14,18 @@ interface PortfolioOverviewProps {
   };
   className?: string;
   layout?: 'equal' | 'auto';
+  statCardLabel?: string;
 }
 
 export const PortfolioOverview = ({
+  titlePortfolioDistribution,
+  titlePortfolioPerformance,
   portfolioData,
   performanceData,
   growth,
   className = '',
-  layout = 'equal'
+  layout = 'equal',
+  statCardLabel
 }: PortfolioOverviewProps) => {
   const gridLayout = layout === 'equal' 
     ? 'grid-cols-1 lg:grid-cols-2' 
@@ -27,8 +33,13 @@ export const PortfolioOverview = ({
 
   return (
     <div className={`grid ${gridLayout} gap-6 ${className}`}>
-      <PortfolioDistribution data={portfolioData} />
-      <PortfolioPerformance 
+      <PortfolioDistribution
+        title={titlePortfolioDistribution}
+        data={portfolioData}
+      />
+      <PortfolioPerformance
+        title={titlePortfolioPerformance}
+        statCardLabel={statCardLabel}
         data={performanceData} 
         growth={growth}
       />
