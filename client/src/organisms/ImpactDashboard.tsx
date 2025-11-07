@@ -2,6 +2,7 @@ import { ImpactContribution } from '../organisms/ImpactContribution';
 import { ImpactMetricData } from '../molecules/ImpactMetric';
 
 interface ImpactDashboardProps {
+  title?: string;
   impactData: {
     metrics: ImpactMetricData[];
     achievement?: {
@@ -12,10 +13,10 @@ interface ImpactDashboardProps {
   className?: string;
 }
 
-export const ImpactDashboard = ({ impactData, className = '' }: ImpactDashboardProps) => {
+export const ImpactDashboard = ({ impactData, title="Tu Contribución de Impacto Verificado" ,className = '' }: ImpactDashboardProps) => {
   return (
     <ImpactContribution
-      title="Tu Contribución de Impacto Verificado"
+      title={title}
       metrics={impactData.metrics}
       achievement={impactData.achievement}
       className={className}

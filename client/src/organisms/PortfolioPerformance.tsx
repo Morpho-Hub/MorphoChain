@@ -11,13 +11,15 @@ interface PortfolioPerformanceProps {
   };
   title?: string;
   className?: string;
+  statCardLabel?: string;
 }
 
 export const PortfolioPerformance = ({ 
   data, 
   growth = { percentage: '+22.5%', trend: 'up' },
   title = "Rendimiento del Portafolio",
-  className = '' 
+  className = '',
+  statCardLabel = "Crecimiento Total"
 }: PortfolioPerformanceProps) => {
   return (
     <Card className={`p-6 ${className}`}>
@@ -26,7 +28,7 @@ export const PortfolioPerformance = ({
       <LineChart data={data} />
       
       <StatCard
-        label="Crecimiento Total"
+        label={statCardLabel}
         value={growth.percentage}
         trend={growth.trend}
         className="mt-6"

@@ -6,7 +6,7 @@ import { ImpactMetricData } from '../molecules/ImpactMetric';
 import { AchievementBadge } from '../atoms/AchievementBadge';
 
 interface ImpactContributionProps {
-  title?: string;
+  title: string;
   metrics: ImpactMetricData[];
   achievement?: {
     title: string;
@@ -16,7 +16,7 @@ interface ImpactContributionProps {
 }
 
 export const ImpactContribution = ({
-  title = "Tu Contribución de Impacto Verificado",
+  title,
   metrics,
   achievement,
   className = ''

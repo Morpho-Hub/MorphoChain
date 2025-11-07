@@ -39,7 +39,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ avatarUrl, userName = 'Usuario' }) 
       { label: t.inventory, href: '/inventario' }
     ] : []),
     ...(user?.role === 'investor' ? [
-      { label: 'Panel de Inversor', href: '/panel-inversor' },
+      { label: 'Panel de Inversor', href: '/investor-dashboard' },
       { label: t.purchases, href: '/compras' }
     ] : []),
   ];

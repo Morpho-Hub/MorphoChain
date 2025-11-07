@@ -1,3 +1,7 @@
+import InvestorDashboard from "@/app/investor-dashboard/page";
+import { Subtitles } from "lucide-react";
+import { title } from "process";
+
 export const es = {
   auth: {
     welcomeTitle: "Bienvenido a MorphoChain",
@@ -67,6 +71,92 @@ export const es = {
   navbar: {
     getStarted: "Comenzar",
   },
+  InvestorDashboard: {
+    header: {
+      title: "Tu Portafolio de Inversiones Sustentables",
+      welcome: "Bienvenida de nuevo, María Rodríguez.",
+      exploreMarket: "Explorar Mercado"
+    },
+    portfolio: {
+      totalValue: "Valor Total del Portafolio",
+      activeTokens: "Tokens Activos",
+      avgMonthlyROI: "ROI Mensual Promedio",
+      impactScore: "Puntuación de Impacto",
+      farmsCount: (count: number) => `En ${count} fincas`,
+      growth: (percentage: number) => `+${percentage}%`,
+      roiChange: (change: number) => `+${change}%`
+    },
+    charts: {
+      portfolioDistribution: "Distribución del Portafolio",
+      portfolioPerformance: "Rendimiento del Portafolio",
+      totalGrowth: "Crecimiento Total"
+    },
+    impact: {
+      title: "Tu Contribución de Impacto Verificado"
+    }
+  },
+  landingPage : {
+    LANDING_TEXTS : {
+    title: "Tokenizando el Futuro Regenerativo de Costa Rica",
+    subTitles: "Conectamos agricultores con inversores conscientes mediante la tokenización agrícola. Construye riqueza mientras restauras el planeta, una cosecha a la vez.",
+    imageClip: "Retorno Anual Promedio",
+    stadsClip01: "Agricultores",
+    stadsClip02: "Financiado",
+    stadsClip03: "Hectáreas",
+    sectionFarmerTitle: "Para Agricultores",
+    sectionInvestor: "Para Inversores",
+    farmerDescription: "Accede a capital, rastrea la sostenibilidad y construye relaciones transparentes con inversores conscientes",
+    investorDescription: "Invierte en agricultura regenerativa verificada con total transparencia e impacto medible",
+    sustainabilityTitle: "Impacto de Sostenibilidad",
+    sustainabilityDescription: "Cada token representa prácticas regenerativas verificadas e impacto ambiental medible",
+    ctaTitle: "¿Listo para Unirte a la Revolución de Finanzas Regenerativas?",
+    ctaDescription: "Ya seas un agricultor buscando capital o un inversor en busca de impacto, MorphoChain te conecta con el futuro agrícola sostenible de Costa Rica."
+  },
+  FARMER_FEATURES : {
+    tokenize: {
+      title: "Tokeniza tus Activos",
+      description: "Convierte tus activos agrícolas en tokens digitales y accede a financiamiento de inversores globales sin las barreras de los préstamos tradicionales."
+    },
+    metrics: {
+      title: "Rastrea Métricas de Impacto",
+      description: "Monitorea automáticamente la salud del suelo (S), secuestro de carbono (C) e índices de vegetación (V) para comprobar tus prácticas regenerativas."
+    },
+    trust: {
+      title: "Confianza y Transparencia",
+      description: "Las credenciales verificadas por blockchain muestran tus prácticas sostenibles y construyen credibilidad con compradores e inversores premium."
+    }
+  },
+  INVESTOR_FEATURES: {
+    diversify: {
+      title: "Diversifica con Activos Reales",
+      description: "Accede a propiedad fraccionada de operaciones agrícolas desde $100. Construye un portafolio que crece mientras haces el bien."
+    },
+    metrics: {
+      title: "Métricas de Impacto Verificadas",
+      description: "Rastrea datos reales de restauración de suelos, captura de carbono y biodiversidad, todo validado en blockchain."
+    },
+    connection: {
+      title: "Conexión Directa con Agricultores",
+      description: "Sabe exactamente a dónde va tu dinero. Habla con agricultores, visita proyectos y observa el impacto de tu inversión."
+    }
+  },
+  SUSTAINABILITY_STATS: {
+    soilHealth: "85%",
+    soilHealthText: "Mejora en Salud del Suelo",
+    co2Sequestration: "12K",
+    co2SequestrationText: "Toneladas CO₂ Secuestradas",
+    biodiversity: "+42%",
+    biodiversityText: "Aumento en Biodiversidad",
+    waterConservation: "68%",
+    waterConservationText: "Conservación de Agua"
+  },
+  BUTTON_TEXTS : {
+    startInvesting: "Comenzar a invertir",
+    exploreFarmerPanel: "Explorar Panel de Agricultor →",
+    viewInvestmentOpportunities: "Ver Oportunidades de Inversión →",
+    startToday: "Comienza Hoy",
+    exploreMarket: "Explorar Mercado"
+  }},
   farmerDashboard: {
     title: "Panel de Agricultor",
     welcomeBack: "Bienvenido de nuevo",
