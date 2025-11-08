@@ -215,6 +215,7 @@ const PortfolioPage: React.FC = () => {
       <div className="container max-w-7xl mx-auto p-6">
         <MyInvestmentsSection
           investments={myInvestments}
+          onClick={() => router.push('/inversion')}
         />
 
       {/* Charts */}

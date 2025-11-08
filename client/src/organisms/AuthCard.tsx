@@ -24,6 +24,10 @@ interface AuthCardProps {
     accountType: string;
     farmer: string;
     investor: string;
+    isCompanyInvestor: string;
+    companyName: string;
+    yes: string;
+    no: string;
     completeProfile: string;
     backToAuth: string;
   };
@@ -31,6 +35,7 @@ interface AuthCardProps {
     fullName: string;
     email: string;
     password: string;
+    companyName: string;
   };
   className?: string;
 }
@@ -68,6 +73,10 @@ const AuthCard: FC<AuthCardProps> = ({
             accountType: texts.accountType,
             farmer: texts.farmer,
             investor: texts.investor,
+            isCompanyInvestor: texts.isCompanyInvestor,
+            companyName: texts.companyName,
+            yes: texts.yes,
+            no: texts.no,
           }}
           placeholders={placeholders}
           submitButtonText={texts.completeProfile}

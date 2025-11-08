@@ -12,3 +12,4 @@ export { default as EnvironmentalSurvey } from './EnvironmentalSurvey';
 export { default as VerificationAlert } from './VerificationAlert';
 export { default as Receipt } from './Receipt';
 export { default as ReceiptModal } from './ReceiptModal';
+export { default as SustainabilityCertificate } from './SustainabilityCertificate';

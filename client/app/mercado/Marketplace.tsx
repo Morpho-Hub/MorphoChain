@@ -1,22 +1,19 @@
 "use client";
 
-import { Filter, X, ShoppingBag, DollarSign, Sprout, Wind, Leaf } from "lucide-react";
+import { Filter, X, ShoppingBag, Leaf } from "lucide-react";
 import { useState } from "react";
 import {
   Card,
   Input,
   Button,
   Badge,
-  Progress,
-  Label,
   Separator,
   ImageWithFallback,
   Heading,
   Text,
   Select,
-  StatCard,
 } from "@/src/atoms";
-import { SearchBar, AssetCard, Modal } from "@/src/molecules";
+import { SearchBar, Modal } from "@/src/molecules";
 import { ReceiptModal } from "@/src/organisms";
 import type { ReceiptData } from "@/src/organisms/Receipt";
 import { es } from "@/locales";
@@ -32,18 +29,9 @@ interface Asset {
   location: string;
   category: string;
   image: string;
-  price: string;
-  tokenPrice: string;
-  totalTokens: number;
-  available: number;
-  roi: string;
-  soilHealth: number;
-  carbonScore: number;
-  vegetationIndex: number;
   status: string;
   description: string;
   practices: string[];
-  financialTerms: string;
   products: { name: string; price: string; unit: string }[];
 }
 
@@ -84,23 +72,14 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       location: "Cartago, Costa Rica",
       category: "Café",
       image: "https://images.unsplash.com/photo-1663125365404-e274869480f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBiZWFucyUyMGZhcm18ZW58MXx8fHwxNzYwNjAzNjMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      price: "$250",
-      tokenPrice: "por token",
-      totalTokens: 500,
-      available: 245,
-      roi: "12.5%",
-      soilHealth: 92,
-      carbonScore: 88,
-      vegetationIndex: 90,
       status: "Activo",
-      description: "Plantación de café orgánico de altura en Cartago, cultivado bajo sombra con prácticas regenerativas que mejoran la salud del suelo y promueven la biodiversidad.",
+      description: "Plantación de café orgánico de altura en Cartago, cultivado bajo sombra con prácticas regenerativas.",
       practices: [
         "Cultivo bajo sombra",
         "Compostaje orgánico",
         "Control biológico de plagas",
         "Conservación de agua",
       ],
-      financialTerms: "Inversión mínima: $250 (1 token). Periodo de retorno: 18 meses. Distribución de ganancias trimestral basada en ventas de cosecha.",
       products: [
         { name: "Café Verde Premium", price: "$18", unit: "lb" },
         { name: "Café Tostado Artesanal", price: "$22", unit: "lb" },
@@ -114,23 +93,14 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       location: "Limón, Costa Rica",
       category: "Cacao",
       image: "https://images.unsplash.com/photo-1720170723453-dd9de7397bd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWNhbyUyMHBvZHN8ZW58MXx8fHwxNzYwNjc2Mzc2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      price: "$260",
-      tokenPrice: "por token",
-      totalTokens: 400,
-      available: 180,
-      roi: "10.8%",
-      soilHealth: 88,
-      carbonScore: 85,
-      vegetationIndex: 87,
       status: "Activo",
-      description: "Finca familiar de cacao orgánico certificado, usando agroforestería tropical que secuestra carbono y protege especies nativas.",
+      description: "Finca familiar de cacao orgánico certificado, usando agroforestería tropical.",
       practices: [
         "Agroforestería tropical",
         "Certificación orgánica",
         "Fermentación tradicional",
         "Biodiversidad nativa",
       ],
-      financialTerms: "Inversión mínima: $260 (1 token). Periodo de retorno: 24 meses. Distribución semestral.",
       products: [
         { name: "Cacao en Grano Premium", price: "$15", unit: "lb" },
         { name: "Nibs de Cacao Orgánico", price: "$18", unit: "lb" },
@@ -144,23 +114,14 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       location: "Puntarenas, Costa Rica",
       category: "Banano",
       image: "https://images.unsplash.com/photo-1653481006616-aab561a77a3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYW5hbmElMjBwbGFudGF0aW9ufGVufDF8fHx8MTc2MDY3NjM3N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      price: "$200",
-      tokenPrice: "por token",
-      totalTokens: 600,
-      available: 425,
-      roi: "9.2%",
-      soilHealth: 85,
-      carbonScore: 82,
-      vegetationIndex: 85,
       status: "Activo",
-      description: "Cooperativa de pequeños productores de banano orgánico, enfocada en comercio justo y prácticas sostenibles.",
+      description: "Cooperativa de pequeños productores de banano orgánico con comercio justo.",
       practices: [
         "Comercio justo",
         "Rotación de cultivos",
         "Manejo integrado de plagas",
         "Reciclaje de residuos",
       ],
-      financialTerms: "Inversión mínima: $200 (1 token). Periodo de retorno: 12 meses. Distribución mensual.",
       products: [
         { name: "Banano Orgánico", price: "$3", unit: "kg" },
         { name: "Plátano Maduro", price: "$2.50", unit: "kg" },
@@ -174,23 +135,14 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       location: "Alajuela, Costa Rica",
       category: "Piña",
       image: "https://images.unsplash.com/photo-1694872581803-b279e7a63f7f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaW5lYXBwbGUlMjBmaWVsZHxlbnwxfHx8fDE3NjA2NzYzNzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      price: "$180",
-      tokenPrice: "por token",
-      totalTokens: 550,
-      available: 320,
-      roi: "8.5%",
-      soilHealth: 80,
-      carbonScore: 78,
-      vegetationIndex: 82,
       status: "Activo",
-      description: "Cultivo de piña dorada con enfoque en reducir el impacto ambiental y mejorar la calidad del suelo.",
+      description: "Cultivo de piña dorada con enfoque en reducir el impacto ambiental.",
       practices: [
         "Cobertura vegetal",
         "Fertilización orgánica",
         "Control natural de malezas",
         "Captación de agua",
       ],
-      financialTerms: "Inversión mínima: $180 (1 token). Periodo de retorno: 15 meses. Distribución trimestral.",
       products: [
         { name: "Piña Dorada Fresca", price: "$4", unit: "unidad" },
         { name: "Piña Deshidratada", price: "$12", unit: "lb" },
@@ -204,23 +156,14 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       location: "Cartago, Costa Rica",
       category: "Café",
       image: "https://images.unsplash.com/photo-1663125365404-e274869480f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBiZWFucyUyMGZhcm18ZW58MXx8fHwxNzYwNjAzNjMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      price: "$275",
-      tokenPrice: "por token",
-      totalTokens: 450,
-      available: 195,
-      roi: "13.2%",
-      soilHealth: 94,
-      carbonScore: 90,
-      vegetationIndex: 92,
       status: "Popular",
-      description: "Café premium de especialidad, cultivado en alta montaña con métodos regenerativos que restauran el ecosistema.",
+      description: "Café premium de especialidad, cultivado en alta montaña con métodos regenerativos.",
       practices: [
         "Café de especialidad",
         "Reforestación activa",
         "Microorganismos eficientes",
         "Captura de carbono",
       ],
-      financialTerms: "Inversión mínima: $275 (1 token). Periodo de retorno: 20 meses. Distribución trimestral con bonos por rendimiento.",
       products: [
         { name: "Café Especial Geisha", price: "$35", unit: "lb" },
         { name: "Café de Altura Premium", price: "$28", unit: "lb" },
@@ -234,23 +177,14 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       location: "Limón, Costa Rica",
       category: "Cacao",
       image: "https://images.unsplash.com/photo-1720170723453-dd9de7397bd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWNhbyUyMHBvZHN8ZW58MXx8fHwxNzYwNjc2Mzc2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      price: "$245",
-      tokenPrice: "por token",
-      totalTokens: 500,
-      available: 280,
-      roi: "11.5%",
-      soilHealth: 90,
-      carbonScore: 87,
-      vegetationIndex: 89,
       status: "Activo",
-      description: "Finca familiar multigeneracional de cacao fino de aroma, preservando variedades ancestrales y conocimiento tradicional.",
+      description: "Finca familiar multigeneracional de cacao fino de aroma.",
       practices: [
         "Variedades ancestrales",
         "Conocimiento tradicional",
         "Agroecología",
         "Conservación genética",
       ],
-      financialTerms: "Inversión mínima: $245 (1 token). Periodo de retorno: 22 meses. Distribución semestral.",
       products: [
         { name: "Cacao Fino de Aroma", price: "$20", unit: "lb" },
         { name: "Chocolate Artesanal 85%", price: "$8", unit: "barra" },
@@ -352,36 +286,79 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
           </div>
         </Card>
 
-        {/* Stats Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard value="24" label={t.stats.activeFarms} />
-          <StatCard value="$4.8M" label={t.stats.totalValue} />
-          <StatCard value="2,450" label={t.stats.tokensAvailable} />
-          <StatCard value="10.8%" label={t.stats.averageROI} />
-        </div>
-
-        {/* Asset Grid */}
+        {/* Assets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assets.map((asset) => (
-            <AssetCard
-              key={asset.id}
-              name={asset.name}
-              farmer={asset.farmer}
-              location={asset.location}
-              image={asset.image}
-              price={asset.price}
-              tokenPrice={asset.tokenPrice}
-              totalTokens={asset.totalTokens}
-              available={asset.available}
-              roi={asset.roi}
-              soilHealth={asset.soilHealth}
-              carbonScore={asset.carbonScore}
-              vegetationIndex={asset.vegetationIndex}
-              status={asset.status}
-              onClick={() => setSelectedAsset(asset)}
-              labels={t.card}
-            />
-          ))}
+          {assets
+            .filter((asset) => {
+              const matchesSearch = searchQuery === "" ||
+                asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                asset.farmer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                asset.location.toLowerCase().includes(searchQuery.toLowerCase());
+              
+              const matchesCategory = selectedCategory === "all" ||
+                asset.category.toLowerCase() === selectedCategory.toLowerCase() ||
+                (selectedCategory === "coffee" && asset.category.toLowerCase().includes("café")) ||
+                (selectedCategory === "others" && !asset.category.toLowerCase().includes("café") && !asset.category.toLowerCase().includes("cacao") && !asset.category.toLowerCase().includes("banana") && !asset.category.toLowerCase().includes("piña"));
+              
+              const matchesRegion = selectedRegion === "all" ||
+                asset.location.toLowerCase().includes(selectedRegion.toLowerCase());
+              
+              return matchesSearch && matchesCategory && matchesRegion;
+            })
+            .map((asset) => (
+              <Card
+                key={asset.id}
+                className="rounded-2xl overflow-hidden border-2 border-[#d1e751]/30"
+              >
+                <div
+                  className="cursor-pointer hover:shadow-morpho transition-shadow"
+                  onClick={() => {
+                    setSelectedAsset(asset);
+                    setShowProductForm(false);
+                  }}
+                >
+                  <div className="relative h-48">
+                    <ImageWithFallback
+                      src={asset.image}
+                      alt={asset.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <Badge variant={asset.status === "Popular" ? "primary" : "success"}>
+                        {asset.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <Heading level={3} className="line-clamp-1">{asset.name}</Heading>
+                    <Text variant="caption" className="text-[#000000]/60">
+                      Por {asset.farmer} • {asset.location}
+                    </Text>
+                    <Text variant="small" className="line-clamp-2">
+                      {asset.description}
+                    </Text>
+                    
+                    <div className="pt-2 border-t border-[#d1e751]/30">
+                      <Text variant="caption" className="font-semibold text-[#66b32e] mb-2 block">
+                        Productos Disponibles:
+                      </Text>
+                      <div className="space-y-1">
+                        {asset.products.slice(0, 3).map((product, idx) => (
+                          <div key={idx} className="flex justify-between items-center">
+                            <Text variant="small" className="text-[#000000]/70">
+                              • {product.name}
+                            </Text>
+                            <Text variant="small" className="font-semibold text-[#26ade4]">
+                              {product.price}/{product.unit}
+                            </Text>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
         </div>
 
         {/* Load More */}
@@ -416,7 +393,6 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
               </div>
 
               <div className="space-y-6 mt-6">
-                {/* Image */}
                 <div className="relative h-64 rounded-xl overflow-hidden">
                   <ImageWithFallback
                     src={selectedAsset.image}
@@ -425,13 +401,11 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                   />
                 </div>
 
-                {/* Project Overview */}
                 <div>
                   <Heading level={3} className="mb-2">{t.details.projectDescription}</Heading>
                   <Text>{selectedAsset.description}</Text>
                 </div>
 
-                {/* Practices */}
                 <div>
                   <Heading level={3} className="mb-2">{t.details.sustainablePractices}</Heading>
                   <div className="grid grid-cols-2 gap-2">
@@ -441,57 +415,6 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                         <Text variant="caption">{practice}</Text>
                       </div>
                     ))}
-                  </div>
-                </div>
-
-                {/* Impact Data */}
-                <div>
-                  <Heading level={3} className="mb-3">{t.details.impactIndicators}</Heading>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-[#d1e751]/10 border border-[#d1e751]/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sprout className="w-5 h-5 text-black/70" />
-                        <Text variant="caption">{t.details.soil}</Text>
-                      </div>
-                      <Heading level={2} className="mb-2">{selectedAsset.soilHealth}%</Heading>
-                      <Progress value={selectedAsset.soilHealth} className="h-2" />
-                    </div>
-                    <div className="p-4 rounded-xl bg-[#4dbce9]/10 border border-[#4dbce9]/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Wind className="w-5 h-5 text-black/70" />
-                        <Text variant="caption">{t.details.carbon}</Text>
-                      </div>
-                      <Heading level={2} className="mb-2">{selectedAsset.carbonScore}%</Heading>
-                      <Progress value={selectedAsset.carbonScore} className="h-2" />
-                    </div>
-                    <div className="p-4 rounded-xl bg-[#d1e751]/10 border border-[#d1e751]/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Leaf className="w-5 h-5 text-black/70" />
-                        <Text variant="caption">{t.details.vegetation}</Text>
-                      </div>
-                      <Heading level={2} className="mb-2">{selectedAsset.vegetationIndex}%</Heading>
-                      <Progress value={selectedAsset.vegetationIndex} className="h-2" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Financial Terms */}
-                <div className="p-4 rounded-xl bg-[#26ade4]/5 border border-[#26ade4]/30">
-                  <Heading level={3} className="mb-2">{t.details.financialTerms}</Heading>
-                  <Text variant="caption">{selectedAsset.financialTerms}</Text>
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <div>
-                      <Text variant="small" className="mb-1">{t.details.tokenValue}</Text>
-                      <Heading level={3}>{selectedAsset.price}</Heading>
-                    </div>
-                    <div>
-                      <Text variant="small" className="mb-1">{t.details.availableTokens}</Text>
-                      <Heading level={3}>{selectedAsset.available}</Heading>
-                    </div>
-                    <div>
-                      <Text variant="small" className="mb-1">{t.details.expectedROI}</Text>
-                      <Heading level={3} className="text-[#d1e751]">{selectedAsset.roi}</Heading>
-                    </div>
                   </div>
                 </div>
 

@@ -28,12 +28,19 @@ const Navbar: React.FC = () => {
     { label: es.userMenu.information, href: '/' },
   ];
 
+  // Add "Invertir" link only for investors
+  const investorLinks = user?.role === 'investor'
+    ? [{ label: t.invest, href: '/inversion' }]
+    : [];
+
+  const allLinks = [...menuLinks, ...investorLinks];
+
   return (
     <nav className="w-full border-b border-gray-200 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <div className="relative flex items-center justify-center h-16">
+          {/* Logo - Absolute left */}
+          <Link href="/" className="absolute left-0 flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-full gradient-earth flex items-center justify-center shadow-morpho">
               <Leaf className="w-5 h-5 text-white" />
             </div>
@@ -45,7 +52,7 @@ const Navbar: React.FC = () => {
           {/* Center - Navigation Links (only when logged in) */}
           {mounted && isLoggedIn && (
             <div className="hidden md:flex items-center gap-8">
-              {menuLinks.map((link, index) => (
+              {allLinks.map((link, index) => (
                 <Link
                   key={index}
                   href={link.href}
@@ -57,8 +64,8 @@ const Navbar: React.FC = () => {
             </div>
           )}
 
-          {/* Right side - Auth buttons or User Menu */}
-          <div className="flex items-center gap-3">
+          {/* Right side - Auth buttons or User Menu - Absolute right */}
+          <div className="absolute right-0 flex items-center gap-3">
             {mounted && isLoggedIn ? (
               <UserMenu avatarUrl={user?.avatar} userName={user?.name || 'Usuario'} />
             ) : (

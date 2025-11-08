@@ -14,6 +14,7 @@ export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
   const [role, setRole] = useState<"farmer" | "investor">("farmer");
 
   const t = es.auth;
+  const p = es.profile;
   const statsLabels = es.stats;
   const placeholders = es.placeholders;
 
@@ -74,6 +75,10 @@ export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
               accountType: t.accountType,
               farmer: t.farmer,
               investor: t.investor,
+              isCompanyInvestor: p.isCompanyInvestor,
+              companyName: p.companyName,
+              yes: p.yes,
+              no: p.no,
               completeProfile: t.completeProfile,
               backToAuth: t.backToAuth,
             }}
