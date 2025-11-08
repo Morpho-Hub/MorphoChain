@@ -1,4 +1,6 @@
-import React, { FC } from "react";
+"use client";
+
+import React, { FC, useState } from "react";
 import Heading from "@/src/atoms/Heading";
 import Text from "@/src/atoms/Text";
 import Button from "@/src/atoms/button";
@@ -17,11 +19,16 @@ interface ProfileFormProps {
     accountType: string;
     farmer: string;
     investor: string;
+    isCompanyInvestor: string;
+    companyName: string;
+    yes: string;
+    no: string;
   };
   placeholders: {
     fullName: string;
     email: string;
     password: string;
+    companyName: string;
   };
   submitButtonText: string;
   backButtonText: string;
@@ -45,6 +52,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
   onBack,
   className = "",
 }) => {
+  const [isCompanyInvestor, setIsCompanyInvestor] = useState(false);
+
   return (
     <div className={`space-y-6 ${className}`}>
       <div className="text-center">
@@ -96,6 +105,31 @@ const ProfileForm: FC<ProfileFormProps> = ({
             investorLabel={labels.investor}
           />
         </div>
+
+        {/* Company field - only for investors */}
+        {selectedRole === "investor" && (
+          <>
+            <div className="space-y-2">
+              <Label>{labels.isCompanyInvestor}</Label>
+              <RoleSelector
+                selectedRole={isCompanyInvestor ? "investor" : "farmer"}
+                onRoleChange={(role) => setIsCompanyInvestor(role === "investor")}
+                farmerLabel={labels.no}
+                investorLabel={labels.yes}
+              />
+            </div>
+
+            {isCompanyInvestor && (
+              <FormField
+                id="company-name"
+                label={labels.companyName}
+                type="text"
+                placeholder={placeholders.companyName}
+                required
+              />
+            )}
+          </>
+        )}
 
         <Button
           title={submitButtonText}
