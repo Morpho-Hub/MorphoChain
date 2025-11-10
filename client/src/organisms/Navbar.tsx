@@ -63,12 +63,20 @@ const Navbar: React.FC = () => {
             {mounted && isLoggedIn ? (
               <UserMenu avatarUrl={user?.avatar} userName={user?.name || 'Usuario'} />
             ) : (
-              <Button
-                title={t.getStarted}
-                variant="blue"
-                onClick={handleGetStarted}
-                className="!bg-[#26ade4] hover:!bg-[#1e8bb8] !text-white !rounded-full !px-6 shadow-morpho"
-              />
+              <>
+                <button
+                  onClick={() => router.push('/login-register?mode=login')}
+                  className="text-gray-700 hover:text-[#26ade4] font-medium transition-colors px-4"
+                >
+                  Iniciar Sesión
+                </button>
+                <Button
+                  title="Registrarse"
+                  variant="blue"
+                  onClick={handleGetStarted}
+                  className="!bg-[#26ade4] hover:!bg-[#1e8bb8] !text-white !rounded-full !px-6 shadow-morpho"
+                />
+              </>
             )}
           </div>
         </div>

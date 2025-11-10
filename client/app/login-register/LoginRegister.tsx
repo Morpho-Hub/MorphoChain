@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { BrandingSection, AuthCard } from "@/src/organisms";
 import { es } from "@/locales";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { authService } from "@/src/services";
 
@@ -14,8 +14,12 @@ interface LoginRegisterProps {
 }
 
 export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
+  const searchParams = useSearchParams();
+  const modeParam = searchParams?.get('mode');
+  
   const [showAccountForm, setShowAccountForm] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(false); // Toggle between login and register
+  const [isLoginMode, setIsLoginMode] = useState(modeParam === 'login'); // Toggle between login and register
+  const [showGoogleButton, setShowGoogleButton] = useState(false);
   const [role, setRole] = useState<"farmer" | "investor">("farmer");
   const [formData, setFormData] = useState({
     name: "",
@@ -78,6 +82,10 @@ export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
             router.push("/investor-dashboard");
           }
         }
+      } else if (result.accountType === 'google') {
+        // Esta es una cuenta de Google, mostrar mensaje especial
+        setError("Esta cuenta fue creada con Google. Por favor, usa 'Registrarse' para iniciar sesión con Google.");
+        setShowGoogleButton(true);
       } else {
         setError(result.error || "Error al iniciar sesión");
       }
@@ -156,9 +164,15 @@ export function LoginRegister({ onNavigate, onLogin }: LoginRegisterProps) {
               }
               return; // Salir después del login exitoso
             }
+          } else if (loginResult.accountType === 'google') {
+            // Esta es una cuenta de Google, no puede usar login tradicional
+            setError("Esta cuenta fue creada con Google. Por favor, inicia sesión con Google.");
+            setShowAccountForm(false);
+            setIsLoginMode(false); // Volver a la pantalla de Google
+            return;
           }
           
-          // Si el login falla, mostrar mensaje y cambiar a modo login
+          // Si el login falla por otra razón, mostrar mensaje y cambiar a modo login
           setError("Ya tienes una cuenta. Por favor inicia sesión.");
           setShowAccountForm(false);
           setIsLoginMode(true);

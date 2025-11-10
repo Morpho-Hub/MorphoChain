@@ -60,7 +60,7 @@ const FarmInvestmentCard: FC<FarmInvestmentCardProps> = ({
             {farmName}
           </Heading>
           <Text variant="caption" className="text-[#000000]/60">
-            📍 {location}
+            {location}
           </Text>
         </div>
 

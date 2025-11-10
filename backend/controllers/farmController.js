@@ -2,6 +2,8 @@ import { Farm, User, Investment } from '../models/index.js';
 import { successResponse, errorResponse, paginatedResponse } from '../utils/apiResponse.js';
 import { MESSAGES } from '../constants/messages.js';
 import { asyncHandler } from '../middlewares/errorHandler.js';
+import plantationService from '../services/plantationService.js';
+import morphoCoinService from '../services/morphoCoinService.js';
 
 export const farmController = {
   /**
@@ -347,5 +349,109 @@ export const farmController = {
     ]);
 
     return paginatedResponse(res, farms, page, limit, total, 'Search results');
+  }),
+
+  /**
+   * Tokenize farm - creates tokens based on sustainability metrics
+   * POST /api/farms/:id/tokenize
+   */
+  tokenizeFarm: asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const userId = req.userId;
+    const { 
+      sustainabilityScore, 
+      carbonScore, 
+      soilHealth, 
+      waterUsage, 
+      biodiversity 
+    } = req.body;
+
+    const farm = await Farm.findById(id).populate('owner');
+
+    if (!farm) {
+      return errorResponse(res, MESSAGES.FARM.NOT_FOUND, 404);
+    }
+
+    // Check ownership
+    if (farm.owner._id.toString() !== userId.toString()) {
+      return errorResponse(res, MESSAGES.FARM.NOT_OWNER, 403);
+    }
+
+    // Check if already tokenized
+    if (farm.tokenId) {
+      return errorResponse(res, 'Farm already tokenized', 400);
+    }
+
+    // Check if user has wallet address
+    if (!farm.owner.walletAddress) {
+      return errorResponse(res, 'User must have a wallet address', 400);
+    }
+
+    try {
+      // Calculate token amount based on sustainability metrics
+      // Higher scores = more tokens
+      const baseAmount = farm.size || 10; // Base on farm size
+      const sustainabilityMultiplier = (
+        (sustainabilityScore || 0) + 
+        (carbonScore || 0) + 
+        (soilHealth || 0) + 
+        (100 - (waterUsage || 50)) + // Lower water usage is better
+        (biodiversity || 0)
+      ) / 500; // Average score out of 100 * 5 metrics
+
+      const tokenAmount = baseAmount * Math.max(0.5, Math.min(2.0, sustainabilityMultiplier));
+
+      // Register plantation in blockchain
+      const plantationId = farm._id.toString();
+      
+      // Check if plantation already exists
+      let existingPlantation;
+      try {
+        existingPlantation = await plantationService.getPlantationByWallet(farm.owner.walletAddress);
+      } catch (error) {
+        console.log('Plantation not found, will create new one');
+      }
+
+      if (!existingPlantation) {
+        // Register new plantation
+        await plantationService.registerPlantation(plantationId, farm.owner.walletAddress);
+      }
+
+      // Mint tokens to the plantation
+      const mintResult = await plantationService.mintToPlantation(plantationId, tokenAmount);
+
+      // Update farm with blockchain data
+      farm.tokenId = plantationId;
+      farm.status = 'active';
+      farm.impactMetrics = {
+        soilHealth,
+        carbonScore,
+        vegetationIndex: sustainabilityScore,
+        waterUsage,
+        biodiversity
+      };
+      farm.sustainabilityData = {
+        sustainabilityScore,
+        carbonScore,
+        soilHealth,
+        waterUsage,
+        biodiversity,
+        tokenAmount,
+        mintedAt: new Date()
+      };
+
+      await farm.save();
+
+      return successResponse(res, {
+        farm,
+        tokenAmount,
+        transactionHash: mintResult.transactionHash,
+        message: 'Farm successfully tokenized'
+      }, 'Farm tokenized successfully', 201);
+
+    } catch (error) {
+      console.error('Tokenization error:', error);
+      return errorResponse(res, `Tokenization failed: ${error.message}`, 500);
+    }
   }),
 };

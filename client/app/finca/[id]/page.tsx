@@ -412,7 +412,7 @@ export default function FarmDetailPage() {
                 </div>
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-xs text-gray-600">
-                    🌱 Estas prácticas contribuyen a un índice de sostenibilidad del {farm.sustainability}%
+                    Estas prácticas contribuyen a un índice de sostenibilidad del {farm.sustainability}%
                   </p>
                 </div>
               </div>

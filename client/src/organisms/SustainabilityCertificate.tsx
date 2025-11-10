@@ -49,7 +49,7 @@ const SustainabilityCertificate: FC<SustainabilityCertificateProps> = ({
       <div className="text-center mb-8 border-b-2 border-[#d1e751] pb-6">
         <div className="flex justify-center mb-4">
           <Badge variant="success" className="text-lg px-6 py-2">
-            🌱 MorphoChain
+            MorphoChain
           </Badge>
         </div>
         <Heading level={1} className="text-[#66b32e] mb-2">

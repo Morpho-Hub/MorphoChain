@@ -11,6 +11,7 @@ interface Product {
   cropType: string;
   unit: string;
   price: number;
+  stock: number; // Cantidad disponible en inventario
 }
 
 interface EnvironmentalMetrics {
@@ -62,6 +63,7 @@ const FarmForm: React.FC<FarmFormProps> = ({
     cropType: '',
     unit: '',
     price: 0,
+    stock: 0,
   });
   
   const [selectedPractices, setSelectedPractices] = useState<string[]>([]);
@@ -95,9 +97,9 @@ const FarmForm: React.FC<FarmFormProps> = ({
   };
 
   const handleAddProduct = () => {
-    if (newProduct.cropType && newProduct.unit && newProduct.price > 0) {
+    if (newProduct.cropType && newProduct.unit && newProduct.price > 0 && newProduct.stock > 0) {
       setProducts([...products, newProduct]);
-      setNewProduct({ cropType: '', unit: '', price: 0 });
+      setNewProduct({ cropType: '', unit: '', price: 0, stock: 0 });
       if (errors.products) {
         setErrors(prev => ({ ...prev, products: undefined }));
       }
@@ -177,39 +179,67 @@ const FarmForm: React.FC<FarmFormProps> = ({
   };
 
   const saveFarm = (metrics: EnvironmentalMetrics | null) => {
-    // Calcular datos derivados
-    const productNames = products.map(p => p.cropType);
-    const avgPrice = products.reduce((sum, p) => sum + p.price, 0) / products.length;
+    // Parse location to extract country, region, city
+    const locationParts = formData.location.split(',').map(s => s.trim());
     
-    const farmData: Partial<Farm> = {
+    const farmData: any = {
       name: formData.name,
-      location: formData.location,
-      description: formData.description,
-      products: productNames,
-      productsCount: products.length,
-      sustainability: Math.min(selectedPractices.length * 10, 100), // 10% por práctica, máx 100%
-      practices: selectedPractices.length,
-      estimatedEarnings: Math.round(avgPrice * 100), // Estimación simple
-      receivedEarnings: 0,
-      productSalesEarnings: 0,
-      tokenEarnings: 0,
+      description: formData.description || formData.goals || 'Finca sostenible',
+      shortDescription: formData.description?.substring(0, 200),
+      location: {
+        country: locationParts[locationParts.length - 1] || 'Colombia',
+        region: locationParts[locationParts.length - 2] || '',
+        city: locationParts[0] || '',
+        address: formData.location
+      },
+      landSize: 10, // Default hectares - could be added to form
+      cropType: products.length > 0 ? products[0].cropType : 'Cultivo General',
+      investmentGoal: products.length > 0 ? products[0].price * products[0].stock : 10000,
+      minInvestment: 100,
+      expectedROI: 15, // Default 15%
+      investmentDuration: 12, // 12 months
+      status: 'draft',
     };
 
-    // Agregar métricas ambientales si existen
-    if (metrics) {
-      const today = new Date();
-      const nextMonth = new Date(today);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      farmData.environmentalMetrics = {
-        ...metrics,
-        lastVerificationDate: today.toISOString(),
-        nextVerificationDate: nextMonth.toISOString(),
-        verificationStatus: 'pending' as const,
+    // Add product info for later use
+    if (products.length > 0) {
+      farmData.product = {
+        name: products[0].cropType,
+        stock: products[0].stock,
+        price: products[0].price,
+        unit: products[0].unit
       };
     }
 
-    onSave(farmData as Omit<Farm, 'id'>);
+    // Add sustainability data if metrics exist
+    if (metrics) {
+      farmData.impactMetrics = {
+        co2Reduction: metrics.carbonReduction,
+        waterUsageReduction: metrics.waterSaved,
+        biodiversityScore: metrics.biodiversityIndex,
+        organicPractices: selectedPractices.length > 0,
+        treesPlanted: 0
+      };
+      
+      farmData.sustainabilityData = {
+        sustainabilityScore: Math.min(selectedPractices.length * 10, 100),
+        carbonScore: metrics.carbonReduction,
+        soilHealth: metrics.soilHealth,
+        waterUsage: metrics.waterSaved,
+        biodiversity: metrics.biodiversityIndex,
+      };
+    }
+
+    // Add certifications based on practices
+    if (selectedPractices.length > 0) {
+      farmData.certifications = selectedPractices.slice(0, 3).map(practice => ({
+        name: practice,
+        issuer: 'MorphoChain',
+        date: new Date()
+      }));
+    }
+
+    onSave(farmData);
   };
 
   const getStepTitle = () => {
@@ -348,7 +378,9 @@ const FarmForm: React.FC<FarmFormProps> = ({
                       <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg">
                         <div className="flex-1">
                           <p className="font-medium text-black">{product.cropType}</p>
-                          <p className="text-sm text-gray-600">{product.unit} - ${product.price}</p>
+                          <p className="text-sm text-gray-600">
+                            {product.stock} {product.unit} - ${product.price} por unidad
+                          </p>
                         </div>
                         <button
                           onClick={() => handleRemoveProduct(index)}
@@ -387,17 +419,30 @@ const FarmForm: React.FC<FarmFormProps> = ({
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {t.priceUSD} <span className="text-red-500">*</span>
+                        Stock Disponible <span className="text-red-500">*</span>
                       </label>
                       <Input
                         type="number"
-                        value={newProduct.price}
-                        onChange={(e) => handleProductChange('price', Number(e.target.value))}
-                        placeholder="25.00"
+                        value={newProduct.stock}
+                        onChange={(e) => handleProductChange('stock', Number(e.target.value))}
+                        placeholder="100"
                         min="0"
-                        step="0.01"
+                        step="1"
                       />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t.priceUSD} <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="number"
+                      value={newProduct.price}
+                      onChange={(e) => handleProductChange('price', Number(e.target.value))}
+                      placeholder="25.00"
+                      min="0"
+                      step="0.01"
+                    />
                   </div>
                   <button
                     type="button"

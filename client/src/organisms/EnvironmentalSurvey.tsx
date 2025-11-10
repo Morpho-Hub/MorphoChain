@@ -318,7 +318,7 @@ const EnvironmentalSurvey: React.FC<EnvironmentalSurveyProps> = ({ onComplete, o
           <p className="text-white/90 text-sm">
             Esta evaluación determina tus métricas ambientales y el rendimiento de tu token ambiental.
             <br />
-            <span className="font-semibold">📋 Se verificará mensualmente de forma independiente.</span>
+            <span className="font-semibold">Se verificará mensualmente de forma independiente.</span>
           </p>
         </div>
 
@@ -731,7 +731,7 @@ const EnvironmentalSurvey: React.FC<EnvironmentalSurveyProps> = ({ onComplete, o
                       className="w-5 h-5 text-green-600 rounded focus:ring-green-600"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-green-900">✓ Tengo facturas de insumos</p>
+                      <p className="font-medium text-green-900">Tengo facturas de insumos</p>
                       <p className="text-xs text-green-700">Facturas de fertilizantes comprobables para verificación</p>
                     </div>
                   </label>
@@ -1018,7 +1018,7 @@ const EnvironmentalSurvey: React.FC<EnvironmentalSurveyProps> = ({ onComplete, o
                       className="w-5 h-5 text-green-600 rounded focus:ring-green-600"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-green-900">✓ Tengo facturas de pesticidas/insumos</p>
+                      <p className="font-medium text-green-900">Tengo facturas de pesticidas/insumos</p>
                       <p className="text-xs text-green-700">Facturas comprobables para auditoría</p>
                     </div>
                   </label>
@@ -1051,7 +1051,7 @@ const EnvironmentalSurvey: React.FC<EnvironmentalSurveyProps> = ({ onComplete, o
                       <li>• Certificadoras independientes</li>
                     </ul>
                     <p className="text-sm text-blue-700 mt-2 font-medium">
-                      ⚠️ Valores falsos resultarán en penalizaciones y pérdida de rendimiento del token.
+                      IMPORTANTE: Valores falsos resultarán en penalizaciones y pérdida de rendimiento del token.
                     </p>
                   </div>
                 </div>

@@ -7,6 +7,8 @@ interface ApiResponse<T> {
   message?: string;
   error?: string;
   statusCode?: number;
+  accountType?: 'google' | 'traditional';
+  email?: string;
 }
 
 class ApiService {

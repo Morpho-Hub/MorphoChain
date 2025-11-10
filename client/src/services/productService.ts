@@ -69,6 +69,10 @@ class ProductService {
     return api.get<Product[]>(`/products/farm/${farmId}`);
   }
 
+  async getByFarm(farmId: string): Promise<ApiResponse<Product[]>> {
+    return this.getProductsByFarm(farmId);
+  }
+
   async createProduct(data: CreateProductData): Promise<ApiResponse<Product>> {
     return api.post<Product>('/products', data);
   }

@@ -10,7 +10,7 @@ export interface Farm {
   category: string;
   description?: string;
   images?: string[];
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'draft';
   tokenId?: number;
   blockchainAddress?: string;
   verificationStatus?: 'verified' | 'pending' | 'unverified';
@@ -22,8 +22,16 @@ export interface Farm {
     biodiversity?: number;
   };
   practices?: string[];
+  product?: {
+    name: string;
+    stock: number;
+    price: number;
+    unit: string;
+  };
+  sustainabilityData?: any;
   createdAt?: string;
   updatedAt?: string;
+  id?: string; // Alias for _id
 }
 
 export interface CreateFarmData {
@@ -33,14 +41,21 @@ export interface CreateFarmData {
   category: string;
   description?: string;
   practices?: string[];
+  product?: {
+    name: string;
+    stock: number;
+    price: number;
+    unit: string;
+  };
+  sustainabilityData?: any;
 }
 
 export interface UpdateFarmData extends Partial<CreateFarmData> {
-  status?: 'active' | 'inactive' | 'pending';
+  status?: 'active' | 'inactive' | 'pending' | 'draft';
 }
 
 class FarmService {
-  async getAllFarms(filters?: {
+  async getAll(filters?: {
     category?: string;
     region?: string;
     status?: string;
@@ -57,34 +72,81 @@ class FarmService {
       if (queryString) endpoint += `?${queryString}`;
     }
     
-    return api.get<Farm[]>(endpoint);
+    const response = await api.get<Farm[]>(endpoint);
+    // Normalize _id to id
+    if (response.success && response.data) {
+      response.data = response.data.map(farm => ({
+        ...farm,
+        id: farm._id || farm.id
+      }));
+    }
+    return response;
   }
 
-  async getFarmById(id: string): Promise<ApiResponse<Farm>> {
-    return api.get<Farm>(`/farms/${id}`);
+  async getById(id: string): Promise<ApiResponse<Farm>> {
+    const response = await api.get<Farm>(`/farms/${id}`);
+    if (response.success && response.data) {
+      response.data.id = response.data._id || response.data.id;
+    }
+    return response;
   }
 
   async getMyFarms(): Promise<ApiResponse<Farm[]>> {
-    return api.get<Farm[]>('/farms/my-farms');
+    const response = await api.get<Farm[]>('/farms/my-farms');
+    if (response.success && response.data) {
+      response.data = response.data.map(farm => ({
+        ...farm,
+        id: farm._id || farm.id
+      }));
+    }
+    return response;
   }
 
-  async createFarm(data: CreateFarmData): Promise<ApiResponse<Farm>> {
-    return api.post<Farm>('/farms', data);
+  async create(data: CreateFarmData): Promise<ApiResponse<Farm>> {
+    const response = await api.post<Farm>('/farms', data);
+    if (response.success && response.data) {
+      response.data.id = response.data._id || response.data.id;
+    }
+    return response;
   }
 
-  async updateFarm(id: string, data: UpdateFarmData): Promise<ApiResponse<Farm>> {
-    return api.put<Farm>(`/farms/${id}`, data);
+  async update(id: string, data: UpdateFarmData): Promise<ApiResponse<Farm>> {
+    const response = await api.put<Farm>(`/farms/${id}`, data);
+    if (response.success && response.data) {
+      response.data.id = response.data._id || response.data.id;
+    }
+    return response;
   }
 
-  async deleteFarm(id: string): Promise<ApiResponse<void>> {
+  async delete(id: string): Promise<ApiResponse<void>> {
     return api.delete<void>(`/farms/${id}`);
   }
 
-  async tokenizeFarm(id: string, data: {
-    initialSupply: number;
-    pricePerToken: number;
+  async tokenize(id: string, data: {
+    sustainabilityScore: number;
+    carbonScore: number;
+    soilHealth: number;
+    waterUsage: number;
+    biodiversity: number;
   }): Promise<ApiResponse<Farm>> {
-    return api.post<Farm>(`/farms/${id}/tokenize`, data);
+    const response = await api.post<Farm>(`/farms/${id}/tokenize`, data);
+    if (response.success && response.data) {
+      response.data.id = response.data._id || response.data.id;
+    }
+    return response;
+  }
+
+  async createProduct(farmId: string, productData: {
+    name: string;
+    stock: number;
+    price: number;
+    unit: string;
+    description?: string;
+  }): Promise<ApiResponse<any>> {
+    return api.post(`/products`, {
+      ...productData,
+      farm: farmId
+    });
   }
 }
 

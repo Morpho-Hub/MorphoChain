@@ -52,13 +52,13 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
         setLoading(true);
         
         // Get all active farms
-        const farmsResponse = await farmService.getAllFarms({ status: 'active' });
+        const farmsResponse = await farmService.getAll({ status: 'active' });
         
         if (farmsResponse.success && farmsResponse.data) {
           // Load products for each farm
           const farmsWithProducts = await Promise.all(
             farmsResponse.data.map(async (farm) => {
-              const productsResponse = await productService.getProductsByFarm(farm._id);
+              const productsResponse = await productService.getByFarm(farm._id || farm.id);
               
               const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
                 ? (farm.owner as any).name 
@@ -66,7 +66,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
               
               return {
                 ...farm,
-                id: farm._id,
+                id: farm._id || farm.id,
                 farmer: farmOwner,
                 image: farm.images?.[0] || '/default-farm.jpg',
                 status: farm.status === 'active' ? 'Activo' : 'Inactivo',

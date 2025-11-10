@@ -46,6 +46,9 @@ const LoginForm: FC<LoginFormProps> = ({
   loading,
   error,
 }) => {
+  const isGoogleAccountError = error?.toLowerCase().includes('google');
+  const handleLoginModeChange = () => onToggleRegister();
+
   return (
     <div className={`space-y-6 ${className}`}>
       <div className="text-center">
@@ -56,8 +59,21 @@ const LoginForm: FC<LoginFormProps> = ({
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-          {error}
+        <div className={`border px-4 py-3 rounded mb-4 ${
+          isGoogleAccountError 
+            ? 'bg-blue-500/10 border-blue-500 text-blue-500'
+            : 'bg-red-500/10 border-red-500 text-red-500'
+        }`}>
+          <p>{error}</p>
+          {isGoogleAccountError && (
+            <button
+              type="button"
+              onClick={handleLoginModeChange}
+              className="block mt-2 underline font-semibold hover:opacity-80"
+            >
+              → Volver a inicio de sesión con Google
+            </button>
+          )}
         </div>
       )}
 

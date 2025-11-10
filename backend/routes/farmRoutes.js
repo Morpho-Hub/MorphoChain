@@ -21,6 +21,7 @@ router.post('/', requireFarmer, validationRules.createFarm, validate, farmContro
 router.put('/:id', requireFarmerOrAdmin, validationRules.updateFarm, validate, farmController.updateFarm);
 router.delete('/:id', requireFarmerOrAdmin, farmController.deleteFarm);
 router.post('/:id/harvest', requireFarmer, farmController.addHarvest);
+router.post('/:id/tokenize', requireFarmer, farmController.tokenizeFarm);
 
 // Internal routes (called by blockchain service)
 router.put('/:id/tokenId', farmController.updateFarmTokenId);

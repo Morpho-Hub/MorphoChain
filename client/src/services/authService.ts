@@ -37,6 +37,7 @@ class AuthService {
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('accountType', data.walletAddress ? 'google' : 'traditional');
       }
     }
     
@@ -51,6 +52,22 @@ class AuthService {
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('accountType', 'traditional');
+      }
+    }
+    
+    return response;
+  }
+
+  async loginWithGoogle(idToken: string): Promise<ApiResponse<AuthResponse>> {
+    const response = await api.post<AuthResponse>('/auth/login', { idToken });
+    
+    if (response.success && response.data) {
+      // Save token to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('accountType', 'google');
       }
     }
     

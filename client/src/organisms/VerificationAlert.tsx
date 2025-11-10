@@ -52,10 +52,10 @@ const VerificationAlert: React.FC<VerificationAlertProps> = ({
               isExpired ? 'text-red-900' : isUrgent ? 'text-orange-900' : 'text-blue-900'
             }`}>
               {isExpired 
-                ? '⚠️ Verificación Ambiental Vencida' 
+                ? 'Verificación Ambiental Vencida' 
                 : isUrgent 
                   ? '⏰ Verificación Próxima' 
-                  : '📋 Verificación Programada'}
+                  : 'Verificación Programada'}
             </h3>
             <p className={`text-sm ${
               isExpired ? 'text-red-700' : isUrgent ? 'text-orange-700' : 'text-blue-700'
@@ -179,7 +179,7 @@ const VerificationAlert: React.FC<VerificationAlertProps> = ({
         {isExpired && (
           <div className="p-3 bg-red-200 rounded-lg border border-red-400">
             <p className="text-sm text-red-900 font-medium">
-              ⚠️ <strong>IMPORTANTE:</strong> Los ingresos por tokenización están suspendidos hasta completar la verificación.
+              <strong>IMPORTANTE:</strong> Los ingresos por tokenización están suspendidos hasta completar la verificación.
               Multa de $50 por cada semana de retraso.
             </p>
           </div>

@@ -165,7 +165,12 @@ export const authController = {
 
             // Check if user has password (not OAuth-only account)
             if (!user.password) {
-                return errorResponse(res, 'Please login with Google', 401);
+                return res.status(401).json({
+                    success: false,
+                    message: 'Please login with Google',
+                    accountType: 'google',
+                    email: user.email
+                });
             }
 
             // Verify password

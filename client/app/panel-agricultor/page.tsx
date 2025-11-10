@@ -1,48 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FarmerDashboard, FarmForm } from '@/src/organisms';
 import type { Farm } from '@/src/molecules/FarmCard';
+import { farmService } from '@/src/services';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function FarmerDashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
 
-  // Datos de ejemplo (en producción vendrían de una API/base de datos)
-  const [farms, setFarms] = useState<Farm[]>([
-    {
-      id: '1',
-      name: 'Finca Verde - Café Orgánico',
-      location: 'Cartago, Costa Rica',
-      description: 'Finca especializada en café orgánico de altura',
-      estimatedEarnings: 45600,
-      receivedEarnings: 32400,
-      productSalesEarnings: 28900,
-      tokenEarnings: 3500,
-      products: ['Café Arábica', 'Café Robusta'],
-      productsCount: 2,
-      sustainability: 92,
-      practices: 3,
-    },
-    {
-      id: '2',
-      name: 'Huerto Esperanza',
-      location: 'Alajuela, Costa Rica',
-      description: 'Cultivo diversificado de vegetales y hortalizas',
-      estimatedEarnings: 28300,
-      receivedEarnings: 21500,
-      productSalesEarnings: 18700,
-      tokenEarnings: 2800,
-      products: ['Tomate Cherry', 'Lechuga', 'Zanahoria'],
-      productsCount: 3,
-      sustainability: 88,
-      practices: 3,
-    },
-  ]);
-
+  const [farms, setFarms] = useState<Farm[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Cargar fincas del usuario
+  useEffect(() => {
+    loadFarms();
+  }, []);
+
+  const loadFarms = async () => {
+    try {
+      setLoading(true);
+      const response = await farmService.getAll();
+      if (response.success && response.data) {
+        setFarms(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading farms:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddFarm = () => {
     setEditingFarm(undefined);
@@ -57,28 +49,76 @@ export default function FarmerDashboardPage() {
   const handleSaveFarm = async (farmData: Omit<Farm, 'id'>) => {
     setIsSaving(true);
     
-    // Simular llamada a API
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      if (editingFarm) {
+        // Editar finca existente
+        const response = await farmService.update(editingFarm.id, farmData);
+        if (response.success && response.data) {
+          setFarms(farms.map(f => 
+            f.id === editingFarm.id ? response.data! : f
+          ));
+        }
+      } else {
+        // Crear nueva finca
+        const response = await farmService.create(farmData);
+        if (response.success && response.data) {
+          const newFarm = response.data;
+          setFarms([...farms, newFarm]);
 
-    if (editingFarm) {
-      // Editar finca existente
-      setFarms(farms.map(f => 
-        f.id === editingFarm.id 
-          ? { ...farmData, id: editingFarm.id }
-          : f
-      ));
-    } else {
-      // Agregar nueva finca
-      const newFarm: Farm = {
-        ...farmData,
-        id: Date.now().toString(),
-      };
-      setFarms([...farms, newFarm]);
+          // Tokenizar automáticamente si tiene datos de sostenibilidad
+          if (farmData.sustainabilityData) {
+            try {
+              const tokenizeResponse = await farmService.tokenize(newFarm.id!, {
+                sustainabilityScore: farmData.sustainabilityData.sustainabilityScore || 0,
+                carbonScore: farmData.sustainabilityData.carbonScore || 0,
+                soilHealth: farmData.sustainabilityData.soilHealth || 0,
+                waterUsage: farmData.sustainabilityData.waterUsage || 0,
+                biodiversity: farmData.sustainabilityData.biodiversity || 0,
+              });
+
+              if (tokenizeResponse.success) {
+                console.log('Farm tokenized successfully:', tokenizeResponse.data);
+                // Actualizar la farm con los datos de tokenización
+                if (tokenizeResponse.data) {
+                  setFarms(prevFarms => prevFarms.map(f =>
+                    f.id === newFarm.id ? tokenizeResponse.data! : f
+                  ));
+                }
+              } else {
+                console.error('Tokenization failed:', tokenizeResponse.error);
+                alert('Finca creada pero la tokenización falló. Puedes intentar tokenizarla más tarde.');
+              }
+            } catch (tokenError) {
+              console.error('Tokenization error:', tokenError);
+              alert('Finca creada pero la tokenización falló. Puedes intentar tokenizarla más tarde.');
+            }
+          }
+
+          // Crear producto en el marketplace si existe
+          if (farmData.product) {
+            try {
+              await farmService.createProduct(newFarm.id!, {
+                name: farmData.product.name,
+                stock: farmData.product.stock,
+                price: farmData.product.price,
+                unit: farmData.product.unit,
+                description: `${farmData.product.name} de ${farmData.name}`,
+              });
+            } catch (productError) {
+              console.error('Product creation error:', productError);
+            }
+          }
+        }
+      }
+
+      setShowForm(false);
+      setEditingFarm(undefined);
+    } catch (error) {
+      console.error('Error saving farm:', error);
+      alert('Error al guardar la finca. Por favor intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsSaving(false);
-    setShowForm(false);
-    setEditingFarm(undefined);
   };
 
   const handleCancelForm = () => {
@@ -86,9 +126,17 @@ export default function FarmerDashboardPage() {
     setEditingFarm(undefined);
   };
 
-  const handleDeleteFarm = (farmId: string) => {
+  const handleDeleteFarm = async (farmId: string) => {
     if (confirm('¿Estás seguro de que deseas eliminar esta finca?')) {
-      setFarms(farms.filter(farm => farm.id !== farmId));
+      try {
+        const response = await farmService.delete(farmId);
+        if (response.success) {
+          setFarms(farms.filter(farm => farm.id !== farmId));
+        }
+      } catch (error) {
+        console.error('Error deleting farm:', error);
+        alert('Error al eliminar la finca. Por favor intenta de nuevo.');
+      }
     }
   };
 
@@ -100,10 +148,21 @@ export default function FarmerDashboardPage() {
     router.push(`/finca/${farm.id}`);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando tus fincas...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <FarmerDashboard
-        userName="Juan Pérez"
+        userName={user?.name || "Agricultor"}
         farms={farms}
         onAddFarm={handleAddFarm}
         onEditFarm={handleEditFarm}
