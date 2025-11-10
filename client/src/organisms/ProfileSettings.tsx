@@ -7,6 +7,7 @@ import { AvatarUpload } from '@/src/molecules';
 import Button from '@/src/atoms/button';
 import { es } from '@/locales';
 import { useAuth } from '@/contexts/AuthContext';
+import { WalletActionsModal } from './WalletActionsModal';
 import axios from 'axios';
 
 interface ProfileFormData {
@@ -37,6 +38,7 @@ const ProfileSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showWalletMenu, setShowWalletMenu] = useState(false);
+  const [modalAction, setModalAction] = useState<'send' | 'receive' | 'transactions' | 'assets' | 'settings' | null>(null);
 
   // Load user data on mount
   useEffect(() => {
@@ -284,28 +286,28 @@ const ProfileSettings: React.FC = () => {
                     <div className="mt-4 pt-4 border-t border-blue-200 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <button
-                          onClick={() => alert('Función Send - Próximamente')}
+                          onClick={() => setModalAction('send')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
                           <Send className="w-5 h-5 text-blue-600" />
                           <span className="text-sm font-medium text-gray-900">Enviar</span>
                         </button>
                         <button
-                          onClick={() => alert('Función Receive - Próximamente')}
+                          onClick={() => setModalAction('receive')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
                           <Download className="w-5 h-5 text-blue-600" />
                           <span className="text-sm font-medium text-gray-900">Recibir</span>
                         </button>
                         <button
-                          onClick={() => alert('Ver Transacciones - Próximamente')}
+                          onClick={() => setModalAction('transactions')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
                           <List className="w-5 h-5 text-blue-600" />
                           <span className="text-sm font-medium text-gray-900">Transacciones</span>
                         </button>
                         <button
-                          onClick={() => alert('Ver Assets - Próximamente')}
+                          onClick={() => setModalAction('assets')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
                           <Eye className="w-5 h-5 text-blue-600" />
@@ -314,7 +316,7 @@ const ProfileSettings: React.FC = () => {
                       </div>
                       
                       <button
-                        onClick={() => alert('Configuración Wallet - Próximamente')}
+                        onClick={() => setModalAction('settings')}
                         className="w-full flex items-center justify-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                       >
                         <Settings className="w-5 h-5 text-blue-600" />
@@ -325,11 +327,25 @@ const ProfileSettings: React.FC = () => {
                         onClick={async () => {
                           if (confirm('¿Estás seguro de que deseas desconectar tu wallet?')) {
                             try {
-                              // Note: disconnect needs the wallet instance, we'll handle it differently
+                              // Clear all auth data
                               logout();
+                              localStorage.clear();
+                              sessionStorage.clear();
+                              
+                              // Clear Thirdweb's internal storage
+                              const thirdwebKeys = Object.keys(localStorage).filter(key => 
+                                key.startsWith('thirdweb') || 
+                                key.includes('wallet') || 
+                                key.includes('WalletConnect')
+                              );
+                              thirdwebKeys.forEach(key => localStorage.removeItem(key));
+                              
+                              // Force reload to clear all state
                               window.location.href = '/login-register';
                             } catch (error) {
                               console.error('Error disconnecting:', error);
+                              // Force reload anyway
+                              window.location.href = '/login-register';
                             }
                           }
                         }}
@@ -412,6 +428,13 @@ const ProfileSettings: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Wallet Actions Modal */}
+      <WalletActionsModal
+        isOpen={!!modalAction}
+        onClose={() => setModalAction(null)}
+        action={modalAction}
+      />
     </div>
   );
 };

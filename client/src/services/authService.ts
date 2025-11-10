@@ -51,9 +51,19 @@ class AuthService {
     return response;
   }
 
-  // Get user by wallet address
-  async getUserByWallet(walletAddress: string): Promise<ApiResponse<User>> {
-    return api.get<User>(`/users/wallet/${walletAddress}`);
+  // Get user by wallet address (returns user and token)
+  async getUserByWallet(walletAddress: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    const response = await api.get<{ user: User; token: string }>(`/users/wallet/${walletAddress}`);
+    
+    // If successful, save token to localStorage
+    if (response.success && response.data) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+    }
+    
+    return response;
   }
 
   // Legacy methods (mantener por compatibilidad)

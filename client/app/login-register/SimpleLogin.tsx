@@ -65,12 +65,24 @@ export function SimpleLogin() {
 
   const handleSwitchAccount = async () => {
     try {
-      // Clear the wallet connection and reload
+      // Clear all storage completely
       localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear all cookies (including Thirdweb/Google OAuth)
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
       setShowAccountSwitch(false);
-      window.location.reload();
+      
+      // Force a complete reload to clear all state
+      window.location.href = '/login-register';
     } catch (error) {
-      console.error('Error disconnecting:', error);
+      console.error('Error switching account:', error);
+      window.location.href = '/login-register';
     }
   };
 

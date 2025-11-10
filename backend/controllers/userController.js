@@ -2,6 +2,7 @@ import { User, Farm, Investment, Product } from '../models/index.js';
 import { successResponse, errorResponse } from '../utils/apiResponse.js';
 import { MESSAGES } from '../constants/messages.js';
 import { asyncHandler } from '../middlewares/errorHandler.js';
+import jwt from 'jsonwebtoken';
 
 export const userController = {
   /**
@@ -161,7 +162,7 @@ export const userController = {
   }),
 
   /**
-   * Get user by wallet address
+   * Get user by wallet address (with JWT token for authentication)
    * GET /api/users/wallet/:address
    */
   getUserByWallet: asyncHandler(async (req, res) => {
@@ -174,7 +175,14 @@ export const userController = {
       return errorResponse(res, MESSAGES.USER.NOT_FOUND, 404);
     }
 
-    return successResponse(res, user, 'User retrieved successfully');
+    // Generate JWT token for the user (like in login)
+    const token = jwt.sign(
+      { userId: user._id, walletAddress: user.walletAddress, role: user.role },
+      process.env.JWT_SECRET || 'dev_jwt_secret',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    return successResponse(res, { user, token }, 'User retrieved successfully');
   }),
 
   /**

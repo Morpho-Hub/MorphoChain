@@ -56,22 +56,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       
       try {
+        console.log('🔍 Checking wallet:', walletAddress);
+        
         // Try to get user by wallet address
         const response = await authService.getUserByWallet(walletAddress);
         
+        console.log('📡 Response from getUserByWallet:', response);
+        
         if (response.success && response.data) {
           // User exists, login
-          setUser(response.data as User);
+          // The response contains { user, token }
+          const userData = response.data.user || response.data;
+          console.log('✅ Usuario encontrado:', userData);
+          setUser(userData as User);
           setIsLoggedIn(true);
           setNeedsOnboarding(false);
         } else {
           // User doesn't exist, needs onboarding
+          console.log('❌ Usuario no encontrado, needs onboarding');
           setUser(null);
           setIsLoggedIn(false);
           setNeedsOnboarding(true);
         }
       } catch (error) {
-        console.error('Error checking user:', error);
+        console.error('❌ Error checking user:', error);
+        // On error, check if user doesn't exist or it's a network issue
+        setUser(null);
+        setIsLoggedIn(false);
         setNeedsOnboarding(true);
       } finally {
         setLoading(false);
@@ -107,7 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error: response.error || 'Error al completar perfil'
         };
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
       return { 
         success: false, 
         error: 'Error de conexión'
@@ -127,7 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const response = await authService.getUserByWallet(walletAddress);
     if (response.success && response.data) {
-      setUser(response.data as User);
+      const userData = response.data.user || response.data;
+      setUser(userData as User);
     }
   };
 
