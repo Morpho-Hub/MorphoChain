@@ -33,14 +33,11 @@ const UserMenu: React.FC<UserMenuProps> = ({ avatarUrl, userName = 'Usuario' }) 
   // Menu items dinámicos según el rol del usuario
   const menuItems = [
     { label: t.profile, href: '/perfil' },
-    { label: t.market, href: '/mercado' },
     ...(user?.role === 'farmer' ? [
-      { label: 'Panel de Agricultor', href: '/panel-agricultor' },
-      { label: t.inventory, href: '/inventario' }
+      { label: 'Panel de Agricultor', href: '/panel-agricultor' }
     ] : []),
     ...(user?.role === 'investor' ? [
-      { label: 'Panel de Inversor', href: '/investor-dashboard' },
-      { label: t.purchases, href: '/compras' }
+      { label: 'Panel de Inversor', href: '/investor-dashboard' }
     ] : []),
   ];
 

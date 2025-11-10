@@ -25,15 +25,9 @@ const Navbar: React.FC = () => {
   
   const menuLinks = [
     { label: es.userMenu.market, href: '/mercado' },
+    { label: es.userMenu.investment, href: '/inversion' },
     { label: es.userMenu.information, href: '/' },
   ];
-
-  // Add "Invertir" link only for investors
-  const investorLinks = user?.role === 'investor'
-    ? [{ label: t.invest, href: '/inversion' }]
-    : [];
-
-  const allLinks = [...menuLinks, ...investorLinks];
 
   return (
     <nav className="w-full border-b border-gray-200 bg-white">
@@ -52,7 +46,7 @@ const Navbar: React.FC = () => {
           {/* Center - Navigation Links (only when logged in) */}
           {mounted && isLoggedIn && (
             <div className="hidden md:flex items-center gap-8">
-              {allLinks.map((link, index) => (
+              {menuLinks.map((link, index) => (
                 <Link
                   key={index}
                   href={link.href}
