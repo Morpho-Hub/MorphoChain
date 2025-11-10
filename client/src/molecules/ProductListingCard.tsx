@@ -23,7 +23,8 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'No especificada';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-CR', {
       year: 'numeric',
@@ -32,29 +33,35 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
     });
   };
 
-  const totalValue = listing.quantity * listing.pricePerUnit;
+  const getStatusLabel = (status?: string) => {
+    const statusMap: Record<string, string> = {
+      'draft': 'Borrador',
+      'active': 'Activo',
+      'out-of-stock': 'Sin stock',
+      'discontinued': 'Descontinuado',
+      'pending': 'Pendiente'
+    };
+    return statusMap[status || 'draft'] || 'Desconocido';
+  };
+
+  const getStatusVariant = (status?: string): 'success' | 'warning' | 'default' => {
+    if (status === 'active') return 'success';
+    if (status === 'out-of-stock' || status === 'discontinued') return 'warning';
+    return 'default';
+  };
+
+  const totalValue = listing.stock * listing.price;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-morpho transition-all">
-      {/* Imagen principal */}
-      <div className="relative h-48 bg-gray-200">
-        {listing.images && listing.images.length > 0 ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={listing.images[0]}
-            alt={listing.productName}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Package className="w-16 h-16 text-gray-400" />
-          </div>
-        )}
+      {/* Header con icono */}
+      <div className="relative h-32 bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+        <Package className="w-16 h-16 text-green-600" />
         {/* Badge de estado */}
         <div className="absolute top-3 right-3">
           <Chip
-            label={listing.available ? t.available : t.soldOut}
-            variant={listing.available ? 'success' : 'warning'}
+            label={getStatusLabel(listing.status)}
+            variant={getStatusVariant(listing.status)}
             size="sm"
           />
         </div>
@@ -63,60 +70,50 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
       {/* Contenido */}
       <div className="p-5">
         {/* Header con nombre */}
-        <div className="mb-3">
+        <div className="mb-4">
           <h3 className="text-lg font-semibold text-black mb-1">
-            {listing.productName}
+            {listing.name}
           </h3>
-          <p className="text-sm text-gray-600">{listing.farmName}</p>
         </div>
-
-        {/* Descripción */}
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-          {listing.description}
-        </p>
 
         {/* Información de cantidad y precio */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(77, 188, 233, 0.15)' }}>
             <div className="flex items-center gap-2 mb-1">
               <Package className="w-4 h-4 text-gray-600" />
-              <p className="text-xs font-medium text-gray-600">{t.quantity}</p>
+              <p className="text-xs font-medium text-gray-600">Stock</p>
             </div>
             <p className="text-lg font-bold text-black">
-              {listing.quantity} {listing.unit}
+              {listing.stock} {listing.unit}
             </p>
           </div>
           <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(209, 231, 81, 0.15)' }}>
             <p className="text-xs font-medium text-gray-600 mb-1">
-              {t.pricePerUnit}
+              Precio/{listing.unit}
             </p>
             <p className="text-lg font-bold text-black">
-              {formatCurrency(listing.pricePerUnit)}
+              {formatCurrency(listing.price)}
             </p>
           </div>
-        </div>
-
-        {/* Fecha de cosecha */}
-        <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>Cosecha: {formatDate(listing.harvestDate)}</span>
         </div>
 
         {/* Total value y acciones */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-200">
           <div>
-            <p className="text-xs text-gray-600">{t.totalValue}</p>
+            <p className="text-xs text-gray-600">Valor Total</p>
             <p className="text-xl font-bold text-black">
               {formatCurrency(totalValue)}
             </p>
           </div>
-          <button
-            onClick={() => onDelete?.(listing.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title={t.deleteConfirm}
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+          {onDelete && (
+            <button
+              onClick={() => onDelete(listing.id)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Eliminar producto"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

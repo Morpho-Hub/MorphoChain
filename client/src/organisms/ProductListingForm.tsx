@@ -7,17 +7,11 @@ import { es } from '@/locales';
 
 export interface ProductListing {
   id: string;
-  farmId: string;
-  farmName: string;
-  productName: string;
-  quantity: number;
+  name: string;
+  price: number;
   unit: string;
-  pricePerUnit: number;
-  harvestDate: string;
-  description: string;
-  images: string[];
-  certifications?: string[];
-  available: boolean;
+  stock: number;
+  status?: 'draft' | 'active' | 'out-of-stock' | 'discontinued' | 'pending';
 }
 
 interface ProductListingFormProps {
@@ -30,12 +24,10 @@ interface ProductListingFormProps {
 }
 
 interface FormErrors {
-  productName?: string;
-  quantity?: string;
+  name?: string;
+  stock?: string;
   unit?: string;
-  pricePerUnit?: string;
-  harvestDate?: string;
-  description?: string;
+  price?: string;
 }
 
 const ProductListingForm: React.FC<ProductListingFormProps> = ({
@@ -49,15 +41,12 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
   const t = es.productListing;
 
   const [formData, setFormData] = useState({
-    productName: listing?.productName || '',
-    quantity: listing?.quantity || 0,
+    name: listing?.name || '',
+    stock: listing?.stock || 0,
     unit: listing?.unit || '',
-    pricePerUnit: listing?.pricePerUnit || 0,
-    harvestDate: listing?.harvestDate || '',
-    description: listing?.description || '',
+    price: listing?.price || 0,
   });
 
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>(listing?.images || []);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const handleInputChange = (
@@ -72,45 +61,20 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-
-      // Crear previews
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreviewUrls(prev => [...prev, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.productName.trim()) {
-      newErrors.productName = t.errors.nameRequired;
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre del producto es requerido';
     }
-    if (!formData.quantity || formData.quantity <= 0) {
-      newErrors.quantity = t.errors.quantityPositive;
+    if (!formData.stock || formData.stock <= 0) {
+      newErrors.stock = 'El stock debe ser mayor a 0';
     }
     if (!formData.unit.trim()) {
-      newErrors.unit = t.errors.unitRequired;
+      newErrors.unit = 'La unidad de medida es requerida';
     }
-    if (!formData.pricePerUnit || formData.pricePerUnit <= 0) {
-      newErrors.pricePerUnit = t.errors.pricePositive;
-    }
-    if (!formData.harvestDate) {
-      newErrors.harvestDate = t.errors.harvestDateRequired;
-    }
-    if (!formData.description.trim()) {
-      newErrors.description = t.errors.descriptionRequired;
+    if (!formData.price || formData.price <= 0) {
+      newErrors.price = 'El precio debe ser mayor a 0';
     }
 
     setErrors(newErrors);
@@ -120,21 +84,16 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
   const handleSubmit = () => {
     if (validateForm()) {
       onSave({
-        farmId,
-        farmName,
-        productName: formData.productName,
-        quantity: formData.quantity,
+        name: formData.name,
+        stock: formData.stock,
         unit: formData.unit,
-        pricePerUnit: formData.pricePerUnit,
-        harvestDate: formData.harvestDate,
-        description: formData.description,
-        images: imagePreviewUrls,
-        available: true,
+        price: formData.price,
+        status: 'active',
       });
     }
   };
 
-  const totalValue = formData.quantity * formData.pricePerUnit;
+  const totalValue = formData.stock * formData.price;
 
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -162,49 +121,49 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
           {/* Nombre del Producto */}
           <div>
             <label className="block text-sm font-medium text-black mb-2">
-              {t.productName} <span className="text-red-500">*</span>
+              Nombre del Producto <span className="text-red-500">*</span>
             </label>
             <Input
-              name="productName"
-              value={formData.productName}
+              name="name"
+              value={formData.name}
               onChange={handleInputChange}
-              placeholder={t.placeholders.productName}
-              className={errors.productName ? 'border-red-500' : ''}
+              placeholder="Ej: Café Orgánico"
+              className={errors.name ? 'border-red-500' : ''}
             />
-            {errors.productName && (
-              <p className="mt-1 text-sm text-red-500">{errors.productName}</p>
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
             )}
           </div>
 
-          {/* Cantidad y Unidad */}
+          {/* Stock y Unidad */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                {t.quantity} <span className="text-red-500">*</span>
+                Stock Disponible <span className="text-red-500">*</span>
               </label>
               <Input
                 type="number"
-                name="quantity"
-                value={formData.quantity}
+                name="stock"
+                value={formData.stock}
                 onChange={handleInputChange}
-                placeholder={t.placeholders.quantity}
+                placeholder="Ej: 100"
                 min="0"
                 step="1"
-                className={errors.quantity ? 'border-red-500' : ''}
+                className={errors.stock ? 'border-red-500' : ''}
               />
-              {errors.quantity && (
-                <p className="mt-1 text-sm text-red-500">{errors.quantity}</p>
+              {errors.stock && (
+                <p className="mt-1 text-sm text-red-500">{errors.stock}</p>
               )}
             </div>
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                {t.unit} <span className="text-red-500">*</span>
+                Unidad de Medida <span className="text-red-500">*</span>
               </label>
               <Input
                 name="unit"
                 value={formData.unit}
                 onChange={handleInputChange}
-                placeholder={t.placeholders.unit}
+                placeholder="Ej: kg, lb, unidad"
                 className={errors.unit ? 'border-red-500' : ''}
               />
               {errors.unit && (
@@ -213,117 +172,34 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
             </div>
           </div>
 
-          {/* Precio */}
+          {/* Precio y Valor Total */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                {t.pricePerUnit} <span className="text-red-500">*</span>
+                Precio por {formData.unit || 'unidad'} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="number"
-                name="pricePerUnit"
-                value={formData.pricePerUnit}
+                name="price"
+                value={formData.price}
                 onChange={handleInputChange}
-                placeholder={t.placeholders.pricePerUnit}
+                placeholder="Ej: 25.00"
                 min="0"
                 step="0.01"
-                className={errors.pricePerUnit ? 'border-red-500' : ''}
+                className={errors.price ? 'border-red-500' : ''}
               />
-              {errors.pricePerUnit && (
-                <p className="mt-1 text-sm text-red-500">{errors.pricePerUnit}</p>
+              {errors.price && (
+                <p className="mt-1 text-sm text-red-500">{errors.price}</p>
               )}
             </div>
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                {t.totalValue}
+                Valor Total Inventario
               </label>
               <div className="px-4 py-2 rounded-lg font-semibold text-black" style={{ backgroundColor: 'rgba(209, 231, 81, 0.25)' }}>
                 ${totalValue.toFixed(2)}
               </div>
             </div>
-          </div>
-
-          {/* Fecha de Cosecha */}
-          <div>
-            <label className="block text-sm font-medium text-black mb-2">
-              {t.harvestDate} <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                type="date"
-                name="harvestDate"
-                value={formData.harvestDate}
-                onChange={handleInputChange}
-                className={errors.harvestDate ? 'border-red-500' : ''}
-              />
-              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            </div>
-            {errors.harvestDate && (
-              <p className="mt-1 text-sm text-red-500">{errors.harvestDate}</p>
-            )}
-          </div>
-
-          {/* Descripción */}
-          <div>
-            <label className="block text-sm font-medium text-black mb-2">
-              {t.productDescription} <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder={t.placeholders.productDescription}
-              rows={4}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26ade4] ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-500">{errors.description}</p>
-            )}
-          </div>
-
-          {/* Imágenes del Producto */}
-          <div>
-            <label className="block text-sm font-medium text-black mb-2">
-              {t.productImages} <span className="text-red-500">*</span>
-            </label>
-            
-            {/* Preview de imágenes */}
-            {imagePreviewUrls.length > 0 && (
-              <div className="grid grid-cols-4 gap-3 mb-3">
-                {imagePreviewUrls.map((url, index) => (
-                  <div key={index} className="relative group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt={`Producto ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <button
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      type="button"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#26ade4] transition-colors cursor-pointer">
-              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-sm text-gray-600 mb-1">{es.farmForm.dragOrClick}</p>
-              <p className="text-xs text-gray-500">{es.farmForm.imageFormats}</p>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
           </div>
         </div>
 
@@ -334,13 +210,13 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
             disabled={isSaving}
             className="flex-1 gradient-green text-black rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all disabled:opacity-50"
           >
-            {isSaving ? t.saving : t.publish}
+            {isSaving ? 'Guardando...' : 'Agregar Producto'}
           </button>
           <button
             onClick={onCancel}
             className="px-6 py-3 border-2 border-gray-300 rounded-lg font-medium text-black hover:bg-gray-50 transition-all"
           >
-            {t.cancel}
+            Cancelar
           </button>
         </div>
       </div>

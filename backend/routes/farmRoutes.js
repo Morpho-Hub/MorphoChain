@@ -8,13 +8,14 @@ const router = express.Router();
 // Public routes
 router.get('/public', farmController.getPublicFarms);
 router.get('/search', farmController.searchFarms);
-router.get('/:id', optionalAuth, farmController.getFarmById);
 
 // Protected routes
 router.use(authenticate); // All routes below require authentication
 
 router.get('/', farmController.getAllFarms);
+router.get('/my-farms', farmController.getMyFarms);
 router.get('/owner/:userId', farmController.getFarmsByOwner);
+router.get('/:id', farmController.getFarmById);
 
 // Farmer only routes
 router.post('/', requireFarmer, validationRules.createFarm, validate, farmController.createFarm);

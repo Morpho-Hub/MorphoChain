@@ -42,8 +42,98 @@ export default function FarmDetailPage() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showVerificationAlert, setShowVerificationAlert] = useState(true);
-  const [certifications, setCertifications] = useState<string[]>(farm?.certifications || []);
+  const [certifications, setCertifications] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Load farm data
+  useEffect(() => {
+    loadFarmData();
+  }, [farmId]);
+
+  const loadFarmData = async () => {
+    try {
+      setLoading(true);
+      const response = await farmService.getById(farmId);
+      if (response.success && response.data) {
+        const farmData = response.data;
+        // Normalize farm data to match Farm interface
+        const normalizedFarm: Farm = {
+          id: farmData._id || farmData.id || farmId,
+          name: farmData.name,
+          location: typeof farmData.location === 'string' 
+            ? farmData.location 
+            : farmData.location?.address || farmData.location?.city || 'Ubicación no especificada',
+          description: farmData.description || '',
+          estimatedEarnings: 0,
+          receivedEarnings: 0,
+          productSalesEarnings: 0,
+          tokenEarnings: 0,
+          products: [],
+          productsCount: 0,
+          sustainability: farmData.impactMetrics?.biodiversityScore || 0,
+          practices: farmData.practices?.length || 0,
+          images: farmData.images?.map((img: any) => typeof img === 'string' ? img : img.url) || [],
+          certifications: farmData.certifications?.map((cert: any) => typeof cert === 'string' ? cert : cert.name) || [],
+          environmentalMetrics: farmData.impactMetrics ? {
+            carbonReduction: farmData.impactMetrics.co2Reduction || 0,
+            waterSaved: farmData.impactMetrics.waterUsageReduction || 0,
+            soilHealth: farmData.impactMetrics.soilHealth || 0,
+            biodiversityIndex: farmData.impactMetrics.biodiversityScore || 0,
+            verificationStatus: farmData.verificationStatus || 'pending' as const,
+            lastVerificationDate: farmData.lastVerificationDate || new Date().toISOString(),
+            nextVerificationDate: farmData.nextVerificationDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+          } : undefined
+        };
+        setFarm(normalizedFarm);
+        setCertifications(normalizedFarm.certifications || []);
+
+        // Load products for this farm
+        console.log('📦 Loading products for farm:', farmId);
+        const productsResponse = await productService.getProductsByFarm(farmId);
+        console.log('📦 Products response:', productsResponse);
+        
+        if (productsResponse.success && productsResponse.data) {
+          console.log('📦 Products data:', productsResponse.data);
+          // Convert products to ProductListings
+          const listings: ProductListing[] = productsResponse.data.map((product: any) => ({
+            id: product._id || product.id,
+            name: product.name,
+            price: product.price,
+            unit: product.unit,
+            stock: product.stock,
+            status: product.status || 'draft'
+          }));
+          console.log('📦 Product listings:', listings);
+          setProductListings(listings);
+          
+          // Update farm with product count
+          normalizedFarm.productsCount = listings.length;
+          normalizedFarm.products = listings.map(l => l.name);
+          setFarm(normalizedFarm);
+          console.log('🌾 Updated farm with products:', normalizedFarm);
+        } else {
+          console.log('📦 No products found or error:', productsResponse.error);
+        }
+      } else {
+        console.error('Farm not found:', response.error);
+      }
+    } catch (error) {
+      console.error('Error loading farm:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando finca...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!farm) {
     return (
@@ -71,17 +161,43 @@ export default function FarmDetailPage() {
   };
 
   const handleSaveProduct = async (listingData: Omit<ProductListing, 'id'>) => {
-    setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newListing: ProductListing = {
-      ...listingData,
-      id: `product-${productListings.length + 1}-${Math.random().toString(36).substr(2, 9)}`,
-    };
-    
-    setProductListings([...productListings, newListing]);
-    setIsSaving(false);
-    setShowProductForm(false);
+    try {
+      setIsSaving(true);
+      
+      // Guardar producto en la base de datos
+      const response = await farmService.createProduct(farmId, {
+        name: listingData.name,
+        stock: listingData.stock,
+        price: listingData.price,
+        unit: listingData.unit,
+        category: 'other'
+      });
+      
+      if (response.success && response.data) {
+        // Agregar el producto a la lista
+        const newListing: ProductListing = {
+          id: response.data._id || response.data.id,
+          name: response.data.name,
+          price: response.data.price,
+          unit: response.data.unit,
+          stock: response.data.stock,
+          status: response.data.status || 'active'
+        };
+        
+        setProductListings([...productListings, newListing]);
+        setShowProductForm(false);
+        
+        // Recargar los datos de la finca
+        loadFarmData();
+      } else {
+        alert('Error al crear el producto: ' + (response.error || 'Error desconocido'));
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Error al guardar el producto');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteProduct = (listingId: string) => {

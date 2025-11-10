@@ -249,6 +249,27 @@ export const farmController = {
   }),
 
   /**
+   * Get my farms (authenticated user)
+   * GET /api/farms/my-farms
+   */
+  getMyFarms: asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { page = 1, limit = 100 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const [farms, total] = await Promise.all([
+      Farm.find({ owner: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Farm.countDocuments({ owner: userId })
+    ]);
+
+    return paginatedResponse(res, farms, page, limit, total, 'My farms retrieved successfully');
+  }),
+
+  /**
    * Update farm tokenId (called by blockchain service)
    * PUT /api/farms/:id/tokenId
    */

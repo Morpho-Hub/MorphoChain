@@ -194,6 +194,28 @@ export const productController = {
   }),
 
   /**
+   * Get my products (authenticated user)
+   * GET /api/products/my-products
+   */
+  getMyProducts: asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { page = 1, limit = 100 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      Product.find({ seller: userId })
+        .populate('farm', 'name location')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Product.countDocuments({ seller: userId })
+    ]);
+
+    return paginatedResponse(res, products, page, limit, total, 'My products retrieved successfully');
+  }),
+
+  /**
    * Get products by farm
    * GET /api/products/farm/:farmId
    */
@@ -202,14 +224,29 @@ export const productController = {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
+    // Build filter - include all statuses if user is authenticated and is the farm owner
+    const filter = { farm: farmId };
+    
+    // If not authenticated or not the owner, only show active products
+    if (!req.userId) {
+      filter.status = 'active';
+    } else {
+      // Check if user is the farm owner
+      const farm = await Farm.findById(farmId);
+      if (farm && farm.owner.toString() !== req.userId.toString()) {
+        filter.status = 'active';
+      }
+      // If user is the owner, don't filter by status (show all products)
+    }
+
     const [products, total] = await Promise.all([
-      Product.find({ farm: farmId, status: 'active' })
+      Product.find(filter)
         .populate('seller', 'firstName lastName profilePicture')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
         .lean(),
-      Product.countDocuments({ farm: farmId, status: 'active' })
+      Product.countDocuments(filter)
     ]);
 
     return paginatedResponse(res, products, page, limit, total, 'Farm products retrieved successfully');

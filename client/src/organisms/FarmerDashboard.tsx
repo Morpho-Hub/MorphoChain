@@ -10,6 +10,7 @@ import { es } from '@/locales';
 interface FarmerDashboardProps {
   userName?: string;
   farms?: Farm[];
+  totalProducts?: number; // Optional override for total products
   onAddFarm?: () => void;
   onEditFarm?: (farm: Farm) => void;
   onDeleteFarm?: (farmId: string) => void;
@@ -20,6 +21,7 @@ interface FarmerDashboardProps {
 const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
   userName = 'Juan Pérez',
   farms = [],
+  totalProducts: totalProductsProp,
   onAddFarm,
   onEditFarm,
   onDeleteFarm,
@@ -31,7 +33,7 @@ const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
   // Calcular estadísticas totales
   const totalEstimatedEarnings = farms.reduce((sum, farm) => sum + farm.estimatedEarnings, 0);
   const totalReceivedEarnings = farms.reduce((sum, farm) => sum + farm.receivedEarnings, 0);
-  const totalProducts = farms.reduce((sum, farm) => sum + farm.productsCount, 0);
+  const totalProducts = totalProductsProp ?? farms.reduce((sum, farm) => sum + farm.productsCount, 0);
   const averageSustainability = farms.length > 0
     ? Math.round(farms.reduce((sum, farm) => sum + farm.sustainability, 0) / farms.length)
     : 0;

@@ -144,10 +144,19 @@ class FarmService {
     price: number;
     unit: string;
     description?: string;
+    category?: string;
   }): Promise<ApiResponse<any>> {
     return api.post(`/products`, {
-      ...productData,
-      farm: farmId
+      name: productData.name,
+      description: productData.description || `Producto orgánico de ${productData.name}`,
+      category: productData.category || 'other',
+      price: productData.price,
+      stock: productData.stock,
+      unit: productData.unit,
+      farm: farmId,
+      status: 'active',
+      isOrganic: true,
+      isFairTrade: true
     });
   }
 }

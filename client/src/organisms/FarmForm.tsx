@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Upload, Check } from 'lucide-react';
 import { Input } from '@/src/atoms';
 import { es } from '@/locales';
 import type { Farm } from '@/src/molecules/FarmCard';
 import EnvironmentalSurvey from './EnvironmentalSurvey';
+import { productService } from '@/src/services';
 
 interface Product {
   cropType: string;
@@ -48,6 +49,7 @@ const FarmForm: React.FC<FarmFormProps> = ({
   const t = es.farmForm;
   const [currentStep, setCurrentStep] = useState(1);
   const [showEnvironmentalSurvey, setShowEnvironmentalSurvey] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Paso 1: Información básica
   const [formData, setFormData] = useState({
@@ -70,6 +72,40 @@ const FarmForm: React.FC<FarmFormProps> = ({
   const [images, setImages] = useState<File[]>([]);
 
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Load existing products when editing a farm
+  useEffect(() => {
+    if (farm?.id) {
+      loadFarmProducts();
+    }
+    // Load existing practices
+    if (farm?.certifications && farm.certifications.length > 0) {
+      setSelectedPractices(farm.certifications);
+    }
+  }, [farm?.id]);
+
+  const loadFarmProducts = async () => {
+    if (!farm?.id) return;
+    
+    try {
+      setLoadingProducts(true);
+      const response = await productService.getProductsByFarm(farm.id);
+      if (response.success && response.data && response.data.length > 0) {
+        const existingProducts: Product[] = response.data.map((product: any) => ({
+          cropType: product.name,
+          unit: product.unit,
+          price: product.price,
+          stock: product.stock
+        }));
+        setProducts(existingProducts);
+        console.log('📦 Loaded existing products:', existingProducts);
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const practices = [
     { key: 'cropRotation', label: t.practices.cropRotation },

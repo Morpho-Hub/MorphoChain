@@ -9,12 +9,15 @@ const router = express.Router();
 router.get('/', productController.getAllProducts);
 router.get('/featured', productController.getFeaturedProducts);
 router.get('/search', productController.searchProducts);
-router.get('/:id', optionalAuth, productController.getProductById);
 router.get('/seller/:userId', productController.getProductsBySeller);
-router.get('/farm/:farmId', productController.getProductsByFarm);
+router.get('/:id', optionalAuth, productController.getProductById);
 
 // Protected routes
 router.use(authenticate);
+
+// Authenticated user routes
+router.get('/my/products', productController.getMyProducts);
+router.get('/farm/:farmId', productController.getProductsByFarm);
 
 // Farmer only routes
 router.post('/', requireFarmer, validationRules.createProduct, validate, productController.createProduct);

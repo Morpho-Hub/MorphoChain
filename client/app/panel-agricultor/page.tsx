@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FarmerDashboard, FarmForm } from '@/src/organisms';
 import type { Farm } from '@/src/molecules/FarmCard';
-import { farmService } from '@/src/services';
+import { farmService, productService } from '@/src/services';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function FarmerDashboardPage() {
@@ -16,52 +16,82 @@ export default function FarmerDashboardPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const [productsMap, setProductsMap] = useState<Record<string, number>>({});
 
   // Cargar fincas del usuario
   useEffect(() => {
-    loadFarms();
+    loadData();
   }, []);
 
-  const normalizeFarm = (farm: any): Farm => {
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Load products first
+      const productCount: Record<string, number> = {};
+      try {
+        const productsResponse = await productService.getMyProducts();
+        console.log('📦 Products response:', productsResponse);
+        
+        if (productsResponse.success && productsResponse.data) {
+          productsResponse.data.forEach((product: any) => {
+            const farmId = typeof product.farm === 'string' ? product.farm : product.farm?._id;
+            if (farmId) {
+              productCount[farmId] = (productCount[farmId] || 0) + 1;
+            }
+          });
+          setProductsMap(productCount);
+          console.log('📦 Products loaded:', productsResponse.data.length, 'products');
+          console.log('📊 Products by farm:', productCount);
+        }
+      } catch (productError) {
+        console.error('Error loading products:', productError);
+      }
+
+      // Then load farms with product counts
+      const farmsResponse = await farmService.getMyFarms();
+      console.log('🌾 Farms response:', farmsResponse);
+      
+      if (farmsResponse.success && farmsResponse.data) {
+        const normalizedFarms = farmsResponse.data.map((farm: any) => normalizeFarm(farm, productCount));
+        setFarms(normalizedFarms);
+        console.log('🌾 Normalized farms:', normalizedFarms);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const normalizeFarm = (farm: any, productCount: Record<string, number> = {}): Farm => {
+    const farmId = farm._id || farm.id;
+    const count = productCount[farmId] || 0;
+    console.log(`🌾 Normalizing farm ${farm.name} (${farmId}): ${count} products`);
     return {
-      id: farm._id || farm.id,
+      id: farmId,
       name: farm.name,
-      location: farm.location?.address || farm.location?.city || 'Ubicación no especificada',
+      location: farm.location?.address || farm.location?.city || farm.location || 'Ubicación no especificada',
       description: farm.description || '',
       estimatedEarnings: 0,
       receivedEarnings: 0,
       productSalesEarnings: 0,
       tokenEarnings: 0,
-      products: [], // Will be populated from product info
-      productsCount: 0,
+      products: [],
+      productsCount: productCount[farmId] || 0,
       sustainability: farm.impactMetrics?.biodiversityScore || 0,
-      practices: farm.certifications?.length || 0,
-      images: farm.images?.map((img: any) => img.url) || [],
-      certifications: farm.certifications?.map((cert: any) => cert.name) || [],
+      practices: farm.practices?.length || farm.certifications?.length || 0,
+      images: farm.images?.map((img: any) => typeof img === 'string' ? img : img.url) || [],
+      certifications: farm.certifications?.map((cert: any) => typeof cert === 'string' ? cert : cert.name) || [],
       environmentalMetrics: farm.impactMetrics ? {
         carbonReduction: farm.impactMetrics.co2Reduction || 0,
         waterSaved: farm.impactMetrics.waterUsageReduction || 0,
-        soilHealth: 0,
+        soilHealth: farm.impactMetrics.soilHealth || 0,
         biodiversityIndex: farm.impactMetrics.biodiversityScore || 0,
-        verificationStatus: 'pending' as const
+        verificationStatus: farm.verificationStatus || 'pending' as const,
+        lastVerificationDate: farm.lastVerificationDate || new Date().toISOString(),
+        nextVerificationDate: farm.nextVerificationDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
       } : undefined
     };
-  };
-
-  const loadFarms = async () => {
-    try {
-      setLoading(true);
-      const response = await farmService.getAll();
-      if (response.success && response.data) {
-        // @ts-ignore
-        const normalizedFarms = response.data.map(normalizeFarm);
-        setFarms(normalizedFarms);
-      }
-    } catch (error) {
-      console.error('Error loading farms:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleAddFarm = () => {
@@ -147,6 +177,7 @@ export default function FarmerDashboardPage() {
                 price: farmData.product.price,
                 unit: farmData.product.unit,
                 description: `${farmData.product.name} de ${farmData.name}`,
+                category: farmData.category || 'other' // Usar la categoría de la finca
               });
             } catch (productError) {
               console.error('Product creation error:', productError);
@@ -154,12 +185,11 @@ export default function FarmerDashboardPage() {
           }
         }
       }
-
       setShowForm(false);
       setEditingFarm(undefined);
       
-      // Reload farms to get fresh data
-      await loadFarms();
+      // Reload farms and products to get fresh data
+      await loadData();
     } catch (error) {
       console.error('❌ Error saving farm:', error);
       alert('Error al guardar la finca. Por favor intenta de nuevo.');
@@ -211,6 +241,7 @@ export default function FarmerDashboardPage() {
       <FarmerDashboard
         userName={user ? `${user.firstName} ${user.lastName}` : "Agricultor"}
         farms={farms}
+        totalProducts={Object.values(productsMap).reduce((sum, count) => sum + count, 0)}
         onAddFarm={handleAddFarm}
         onEditFarm={handleEditFarm}
         onDeleteFarm={handleDeleteFarm}
