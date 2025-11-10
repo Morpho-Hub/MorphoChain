@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { ConnectButton, useActiveAccount } from "thirdweb/react";
+import { ConnectButton, useActiveAccount, useDisconnect } from "thirdweb/react";
 import { inAppWallet } from "thirdweb/wallets";
 import { client, SUPPORTED_CHAIN } from "@/config/web3";
 import { Card } from "@/src/atoms";
@@ -15,6 +15,7 @@ export function SimpleLogin() {
   const router = useRouter();
   const { isLoggedIn, user, needsOnboarding, completeOnboarding, walletAddress, loading } = useAuth();
   const account = useActiveAccount();
+  const { disconnect } = useDisconnect();
   
   const t = es.auth;
   const statsLabels = es.stats;
@@ -54,6 +55,17 @@ export function SimpleLogin() {
     }
   }, [needsOnboarding, walletAddress, loading]);
 
+  // Clear auto-connect flag on mount to force manual connection
+  useEffect(() => {
+    // Set a flag to prevent auto-connect on this page
+    sessionStorage.setItem('prevent-auto-connect', 'true');
+    
+    return () => {
+      // Clean up the flag when leaving the page
+      sessionStorage.removeItem('prevent-auto-connect');
+    };
+  }, []);
+
   // Show account switch option when wallet is already connected
   useEffect(() => {
     if (account && !loading && !isLoggedIn && !needsOnboarding) {
@@ -65,9 +77,34 @@ export function SimpleLogin() {
 
   const handleSwitchAccount = async () => {
     try {
+      console.log('🔄 Switching account...');
+      
+      // Disconnect wallet if connected
+      if (account) {
+        disconnect(account);
+      }
+      
       // Clear all storage completely
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Clear IndexedDB (where Thirdweb stores wallet data)
+      if ('indexedDB' in window) {
+        try {
+          // Delete all Thirdweb related databases
+          const databases = await window.indexedDB.databases?.();
+          if (databases) {
+            for (const db of databases) {
+              if (db.name && (db.name.includes('thirdweb') || db.name.includes('walletconnect') || db.name.includes('idb-keyval'))) {
+                console.log('🗑️ Deleting database:', db.name);
+                window.indexedDB.deleteDatabase(db.name);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Could not clear IndexedDB:', e);
+        }
+      }
       
       // Clear all cookies (including Thirdweb/Google OAuth)
       document.cookie.split(";").forEach((c) => {
@@ -76,10 +113,27 @@ export function SimpleLogin() {
           .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
       
+      // Also clear Google OAuth session by redirecting through logout
+      // This forces Google to ask for account selection next time
+      try {
+        const googleLogoutUrl = 'https://accounts.google.com/Logout';
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = googleLogoutUrl;
+        document.body.appendChild(iframe);
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      } catch (e) {
+        console.warn('Could not clear Google session:', e);
+      }
+      
       setShowAccountSwitch(false);
       
+      console.log('✅ Storage cleared, reloading...');
+      
       // Force a complete reload to clear all state
-      window.location.href = '/login-register';
+      setTimeout(() => {
+        window.location.href = '/login-register';
+      }, 1200);
     } catch (error) {
       console.error('Error switching account:', error);
       window.location.href = '/login-register';
@@ -206,6 +260,7 @@ export function SimpleLogin() {
                       <ConnectButton
                         client={client}
                         chain={SUPPORTED_CHAIN}
+                        autoConnect={false}
                         connectButton={{
                           label: "Conectar con Google",
                           className: "!bg-white !text-gray-900 !font-semibold !px-8 !py-4 !rounded-lg hover:!bg-gray-50 !shadow-lg !border-2 !border-gray-200 transition-all",

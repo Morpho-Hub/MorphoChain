@@ -31,6 +31,74 @@ export default function InversionPage() {
 
   const t = es.investment;
 
+  // Mock data for tokenized farms
+  const tokenFarms = [
+    {
+      id: 1,
+      name: "Finca Café Orgánico El Paraíso",
+      farmer: "Carlos Rodríguez",
+      location: "Tarrazú, Costa Rica",
+      category: "café",
+      image: "/images/coffee-farm.jpg",
+      tokenPrice: "$10",
+      roi: "18% anual",
+      available: 450,
+      totalTokens: 1000,
+      status: "Popular",
+      soilHealth: 92,
+      carbonScore: 88,
+      vegetationIndex: 95,
+    },
+    {
+      id: 2,
+      name: "Plantación Cacao Fino Orgánico",
+      farmer: "María González",
+      location: "Limón, Costa Rica",
+      category: "cacao",
+      image: "/images/cacao-farm.jpg",
+      tokenPrice: "$15",
+      roi: "22% anual",
+      available: 320,
+      totalTokens: 800,
+      status: "Destacado",
+      soilHealth: 89,
+      carbonScore: 91,
+      vegetationIndex: 93,
+    },
+    {
+      id: 3,
+      name: "Finca Banano Regenerativo",
+      farmer: "José Mora",
+      location: "Guápiles, Costa Rica",
+      category: "banano",
+      image: "/images/banana-farm.jpg",
+      tokenPrice: "$8",
+      roi: "15% anual",
+      available: 580,
+      totalTokens: 1200,
+      status: "Popular",
+      soilHealth: 85,
+      carbonScore: 82,
+      vegetationIndex: 88,
+    },
+    {
+      id: 4,
+      name: "Piña Golden Sostenible",
+      farmer: "Ana Jiménez",
+      location: "San Carlos, Costa Rica",
+      category: "piña",
+      image: "/images/pineapple-farm.jpg",
+      tokenPrice: "$12",
+      roi: "20% anual",
+      available: 200,
+      totalTokens: 600,
+      status: "Destacado",
+      soilHealth: 90,
+      carbonScore: 87,
+      vegetationIndex: 91,
+    },
+  ];
+
   const handleTokenInvest = (farm: any) => {
     setSelectedFarm(farm);
     setShowInvestModal(true);
@@ -124,7 +192,7 @@ export default function InversionPage() {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-hero py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-hero py-8 px-4 sm:px-6 lg:px-8" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="text-center space-y-4">
           <Heading level={1} className="text-4xl">

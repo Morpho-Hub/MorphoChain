@@ -38,7 +38,12 @@ export interface AuthResponse {
 class AuthService {
   // Register with wallet (Google OAuth)
   async registerWithWallet(data: RegisterWalletData): Promise<ApiResponse<AuthResponse>> {
-    const response = await api.post<AuthResponse>('/auth/register-wallet', data);
+    // Normalize wallet address to lowercase to match database format
+    const normalizedData = {
+      ...data,
+      walletAddress: data.walletAddress.toLowerCase()
+    };
+    const response = await api.post<AuthResponse>('/auth/register-wallet', normalizedData);
     
     if (response.success && response.data) {
       // Save token to localStorage
@@ -53,7 +58,9 @@ class AuthService {
 
   // Get user by wallet address (returns user and token)
   async getUserByWallet(walletAddress: string): Promise<ApiResponse<{ user: User; token: string }>> {
-    const response = await api.get<{ user: User; token: string }>(`/users/wallet/${walletAddress}`);
+    // Normalize wallet address to lowercase to match database format
+    const normalizedAddress = walletAddress.toLowerCase();
+    const response = await api.get<{ user: User; token: string }>(`/users/wallet/${normalizedAddress}`);
     
     // If successful, save token to localStorage
     if (response.success && response.data) {

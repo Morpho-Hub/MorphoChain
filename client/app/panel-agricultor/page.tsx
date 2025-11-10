@@ -162,7 +162,7 @@ export default function FarmerDashboardPage() {
   return (
     <>
       <FarmerDashboard
-        userName={user?.name || "Agricultor"}
+        userName={user ? `${user.firstName} ${user.lastName}` : "Agricultor"}
         farms={farms}
         onAddFarm={handleAddFarm}
         onEditFarm={handleEditFarm}

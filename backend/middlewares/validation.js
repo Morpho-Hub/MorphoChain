@@ -15,6 +15,9 @@ export const validate = (req, res, next) => {
       value: err.value
     }));
 
+    console.log('❌ Validation errors:', formattedErrors);
+    console.log('Request body:', req.body);
+
     return errorResponse(
       res,
       MESSAGES.GENERAL.VALIDATION_ERROR,
@@ -37,8 +40,18 @@ export const validationRules = {
     body('firstName').optional().trim().isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
     body('lastName').optional().trim().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
     body('bio').optional().isLength({ max: 500 }).withMessage('Bio must not exceed 500 characters'),
-    body('phone').optional().isMobilePhone().withMessage('Invalid phone number'),
+    body('phone').optional().trim().custom((value) => {
+      // Allow empty strings or valid phone numbers
+      if (!value || value === '') return true;
+      // Basic phone validation: allow digits, spaces, dashes, parentheses, and plus sign
+      const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+      if (!phoneRegex.test(value)) {
+        throw new Error('Invalid phone number format');
+      }
+      return true;
+    }),
     body('country').optional().trim(),
+    body('language').optional().trim(),
   ],
 
   // Farm validations

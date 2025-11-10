@@ -138,7 +138,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
     const receipt: ReceiptData = {
       orderNumber: `MCH-${Date.now().toString().slice(-8)}`,
       date: new Date().toISOString(),
-      buyerName: user?.name || "Usuario Inversor",
+      buyerName: user ? `${user.firstName} ${user.lastName}` : "Usuario Inversor",
       buyerEmail: user?.email || "usuario@example.com",
       sellerName: selectedAsset.farmer,
       farmName: selectedAsset.name,

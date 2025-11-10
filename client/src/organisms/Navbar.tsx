@@ -61,7 +61,10 @@ const Navbar: React.FC = () => {
           {/* Right side - Auth buttons or User Menu - Absolute right */}
           <div className="absolute right-0 flex items-center gap-3">
             {mounted && isLoggedIn ? (
-              <UserMenu avatarUrl={user?.avatar} userName={user?.name || 'Usuario'} />
+              <UserMenu 
+                avatarUrl={user?.profilePicture || user?.avatar} 
+                userName={user ? `${user.firstName} ${user.lastName}` : 'Usuario'} 
+              />
             ) : (
               <Button
                 title="Conectar"

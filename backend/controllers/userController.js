@@ -26,6 +26,12 @@ export const userController = {
   updateProfile: asyncHandler(async (req, res) => {
     const userId = req.userId;
     
+    console.log('🔹 Update Profile Request:', {
+      userId,
+      body: req.body,
+      headers: req.headers.authorization
+    });
+    
     // Fields that can be updated
     const allowedFields = [
       'firstName', 'lastName', 'bio', 'phone', 'country', 'language',
@@ -39,13 +45,27 @@ export const userController = {
       }
     });
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { ...updates, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    ).select('-emailVerificationToken');
+    console.log('🔹 Updates to apply:', updates);
 
-    return successResponse(res, user, MESSAGES.USER.PROFILE_UPDATED);
+    try {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { ...updates, updatedAt: new Date() },
+        { new: true, runValidators: true }
+      ).select('-emailVerificationToken');
+
+      if (!user) {
+        console.log('❌ User not found:', userId);
+        return errorResponse(res, MESSAGES.USER.NOT_FOUND, 404);
+      }
+
+      console.log('✅ Profile updated successfully:', user._id);
+      return successResponse(res, user, MESSAGES.USER.PROFILE_UPDATED);
+    } catch (error) {
+      console.error('❌ Validation error:', error.message);
+      console.error('Error details:', error);
+      return errorResponse(res, error.message || 'Validation failed', 400);
+    }
   }),
 
   /**

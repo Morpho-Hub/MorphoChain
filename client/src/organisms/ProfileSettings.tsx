@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Save, Wallet, Send, Download, Eye, Settings, LogOut, List } from 'lucide-react';
+import { User, Mail, Save, Wallet, Send, Download, Eye, Settings, LogOut, List, Lock } from 'lucide-react';
 import { Input } from '@/src/atoms';
 import { AvatarUpload } from '@/src/molecules';
 import Button from '@/src/atoms/button';
@@ -11,11 +11,12 @@ import { WalletActionsModal } from './WalletActionsModal';
 import axios from 'axios';
 
 interface ProfileFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  birthdate: string;
   phone: string;
   bio: string;
+  country: string;
   avatar: File | null;
 }
 
@@ -26,11 +27,12 @@ const ProfileSettings: React.FC = () => {
   const { user, walletAddress, logout } = useAuth();
   
   const [formData, setFormData] = useState<ProfileFormData>({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    birthdate: '',
     phone: '',
     bio: '',
+    country: '',
     avatar: null,
   });
 
@@ -44,11 +46,12 @@ const ProfileSettings: React.FC = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || '',
-        birthdate: user.birthdate || '',
         phone: user.phone || '',
         bio: user.bio || '',
+        country: user.country || '',
         avatar: null,
       });
     }
@@ -70,9 +73,13 @@ const ProfileSettings: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProfileFormData, string>> = {};
 
-    // Validar nombre
-    if (!formData.name.trim()) {
-      newErrors.name = t.errors.nameRequired;
+    // Validar nombres
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'El nombre es requerido';
+    }
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'El apellido es requerido';
     }
 
     // Validar email
@@ -105,17 +112,15 @@ const ProfileSettings: React.FC = () => {
         return;
       }
 
-      // Split name into firstName and lastName
-      const nameParts = formData.name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
       const updateData = {
-        firstName,
-        lastName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         phone: formData.phone,
         bio: formData.bio,
+        country: formData.country,
       };
+
+      console.log('📤 Sending update data:', updateData);
 
       const response = await axios.put(
         `${API_URL}/users/me`,
@@ -127,16 +132,39 @@ const ProfileSettings: React.FC = () => {
         }
       );
 
+      console.log('✅ Response:', response.data);
+
       if (response.data.success) {
         setSuccessMessage('Perfil actualizado correctamente');
+        
+        // Update user in localStorage
+        const updatedUser = response.data.data;
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Trigger page reload to refresh AuthContext
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       }
     } catch (error: unknown) {
-      console.error('Error al guardar:', error);
+      console.error('❌ Error al guardar:', error);
       if (axios.isAxiosError(error)) {
-        const errorMessage = (error.response?.data as { message?: string })?.message || 'Error al actualizar el perfil';
-        setErrors({ 
-          email: errorMessage
-        });
+        console.error('Response data:', error.response?.data);
+        const errorData = error.response?.data as { message?: string; errors?: Array<{ field: string; message: string }> };
+        
+        // Check if there are validation errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const newErrors: Partial<Record<keyof ProfileFormData, string>> = {};
+          errorData.errors.forEach((err: { field: string; message: string }) => {
+            newErrors[err.field as keyof ProfileFormData] = err.message;
+          });
+          setErrors(newErrors);
+        } else {
+          const errorMessage = errorData?.message || 'Error al actualizar el perfil';
+          setErrors({ 
+            email: errorMessage
+          });
+        }
       } else {
         setErrors({ email: 'Error de conexión' });
       }
@@ -167,26 +195,45 @@ const ProfileSettings: React.FC = () => {
                 <AvatarUpload
                   onImageChange={handleAvatarChange}
                   size="xl"
-                  userName={formData.name}
+                  userName={`${formData.firstName} ${formData.lastName}`}
                 />
               </div>
               
-              {/* Nombre debajo del avatar */}
-              <div className="w-full">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
-                  {t.fullName} <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder={es.placeholders.fullName}
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+              {/* Nombre y Apellido debajo del avatar */}
+              <div className="w-full space-y-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 mb-2">
+                    Nombre <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    placeholder="Juan"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
+                    className={errors.firstName ? 'border-red-500' : ''}
+                  />
+                  {errors.firstName && <p className="mt-1 text-sm text-red-500">{errors.firstName}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 mb-2">
+                    Apellido <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    placeholder="Pérez"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
+                    className={errors.lastName ? 'border-red-500' : ''}
+                  />
+                  {errors.lastName && <p className="mt-1 text-sm text-red-500">{errors.lastName}</p>}
+                </div>
               </div>
             </div>
 
@@ -200,18 +247,19 @@ const ProfileSettings: React.FC = () => {
                 </h2>
 
                 <div>
-                  <label htmlFor="birthdate" className="block text-sm font-medium text-gray-900 mb-2">
-                    {t.birthdate}
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-900 mb-2">
+                    País
                   </label>
                   <Input
-                    id="birthdate"
-                    name="birthdate"
-                    type="date"
-                    value={formData.birthdate}
+                    id="country"
+                    name="country"
+                    type="text"
+                    placeholder="México"
+                    value={formData.country}
                     onChange={handleInputChange}
-                    className={errors.birthdate ? 'border-red-500' : ''}
+                    className={errors.country ? 'border-red-500' : ''}
                   />
-                  {errors.birthdate && <p className="mt-1 text-sm text-red-500">{errors.birthdate}</p>}
+                  {errors.country && <p className="mt-1 text-sm text-red-500">{errors.country}</p>}
                 </div>
               </div>
 
@@ -223,20 +271,26 @@ const ProfileSettings: React.FC = () => {
                 </h2>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
                     {t.email} <span className="text-red-500">*</span>
+                    <Lock className="w-4 h-4 text-gray-400" />
                   </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder={es.placeholders.email}
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder={es.placeholders.email}
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      disabled
+                      className="bg-gray-100 text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    El correo electrónico no puede ser modificado por seguridad
+                  </p>
                 </div>
 
                 <div>
@@ -413,11 +467,12 @@ const ProfileSettings: React.FC = () => {
                 // Reset form
                 if (user) {
                   setFormData({
-                    name: user.name || '',
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
                     email: user.email || '',
-                    birthdate: '',
-                    phone: '',
-                    bio: '',
+                    phone: user.phone || '',
+                    bio: user.bio || '',
+                    country: user.country || '',
                     avatar: null,
                   });
                 }

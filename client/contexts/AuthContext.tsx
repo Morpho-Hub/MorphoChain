@@ -6,15 +6,20 @@ import { authService } from '@/src/services';
 
 interface User {
   _id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  name?: string; // Computed field
   email: string;
   role: 'farmer' | 'investor' | 'admin';
   walletAddress: string;
-  isVerified: boolean;
+  emailVerified?: boolean;
+  isVerified?: boolean;
+  profilePicture?: string;
   avatar?: string;
   phone?: string;
   bio?: string;
-  birthdate?: string;
+  country?: string;
+  language?: string;
 }
 
 interface AuthContextType {
@@ -40,15 +45,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [loading, setLoading] = useState(true);
   const account = useActiveAccount();
-  const walletAddress = account?.address;
+  // Normalize wallet address to lowercase to match database format
+  const walletAddress = account?.address?.toLowerCase();
 
-  // Check if user exists when wallet connects
+  // Check if user exists when wallet connects or on mount
   useEffect(() => {
     const checkUserByWallet = async () => {
+      // First, try to load from localStorage on mount
       if (!walletAddress) {
-        setUser(null);
-        setIsLoggedIn(false);
-        setNeedsOnboarding(false);
+        const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
+        
+        if (storedUser && storedToken) {
+          try {
+            const userData = JSON.parse(storedUser);
+            console.log('🔄 Restoring user from localStorage:', userData);
+            setUser(userData);
+            setIsLoggedIn(true);
+            setNeedsOnboarding(false);
+          } catch (e) {
+            console.error('Error parsing stored user:', e);
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        }
+        
         setLoading(false);
         return;
       }

@@ -38,7 +38,7 @@ export default function PurchasesPage() {
               return {
                 orderNumber: `MCH-${tx._id.slice(-8)}`,
                 date: tx.createdAt || new Date().toISOString(),
-                buyerName: user?.name || 'Usuario',
+                buyerName: user ? `${user.firstName} ${user.lastName}` : 'Usuario',
                 buyerEmail: user?.email || '',
                 sellerName: metadata.sellerName || 'Agricultor',
                 farmName: metadata.farmName || 'Finca',
