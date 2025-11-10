@@ -1,14 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService, User as ServiceUser } from '@/src/services';
+import { useActiveAccount } from 'thirdweb/react';
+import { authService } from '@/src/services';
 
 interface User {
   _id: string;
   name: string;
   email: string;
   role: 'farmer' | 'investor' | 'admin';
-  walletAddress?: string;
+  walletAddress: string;
   isVerified: boolean;
   avatar?: string;
 }
@@ -16,14 +17,13 @@ interface User {
 interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
-  login: (email: string, password: string) => Promise<{success: boolean; error?: string}>;
-  register: (data: {
-    email: string;
-    password: string;
+  walletAddress: string | undefined;
+  needsOnboarding: boolean;
+  completeOnboarding: (data: {
     name: string;
+    email: string;
     role: 'investor' | 'farmer';
-    walletAddress?: string;
-  }) => Promise<{success: boolean; error?: string; statusCode?: number}>;
+  }) => Promise<{success: boolean; error?: string}>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   loading: boolean;
@@ -34,90 +34,111 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [loading, setLoading] = useState(true);
+  const account = useActiveAccount();
+  const walletAddress = account?.address;
 
-  // Check for existing session on mount
+  // Check if user exists when wallet connects
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = authService.getToken();
-      if (token) {
-        const response = await authService.getMe();
+    const checkUserByWallet = async () => {
+      if (!walletAddress) {
+        setUser(null);
+        setIsLoggedIn(false);
+        setNeedsOnboarding(false);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      
+      try {
+        // Try to get user by wallet address
+        const response = await authService.getUserByWallet(walletAddress);
+        
         if (response.success && response.data) {
+          // User exists, login
           setUser(response.data as User);
           setIsLoggedIn(true);
+          setNeedsOnboarding(false);
         } else {
-          // Token is invalid, clear it
-          authService.logout();
+          // User doesn't exist, needs onboarding
+          setUser(null);
+          setIsLoggedIn(false);
+          setNeedsOnboarding(true);
         }
+      } catch (error) {
+        console.error('Error checking user:', error);
+        setNeedsOnboarding(true);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    checkAuth();
-  }, []);
+    checkUserByWallet();
+  }, [walletAddress]);
 
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await authService.login({ email, password });
-      
-      if (response.success && response.data) {
-        setUser(response.data.user as User);
-        setIsLoggedIn(true);
-        return { success: true };
-      } else {
-        return { success: false, error: response.error || 'Error al iniciar sesión' };
-      }
-    } catch (error) {
-      return { success: false, error: 'Error de conexión' };
-    }
-  };
-
-  const register = async (data: {
-    email: string;
-    password: string;
+  const completeOnboarding = async (data: {
     name: string;
+    email: string;
     role: 'investor' | 'farmer';
-    walletAddress?: string;
   }) => {
+    if (!walletAddress) {
+      return { success: false, error: 'No wallet connected' };
+    }
+
     try {
-      const response = await authService.register(data);
+      const response = await authService.registerWithWallet({
+        ...data,
+        walletAddress,
+      });
       
       if (response.success && response.data) {
         setUser(response.data.user as User);
         setIsLoggedIn(true);
+        setNeedsOnboarding(false);
         return { success: true };
       } else {
-        // Pasar el error completo para que pueda ser detectado
         return { 
           success: false, 
-          error: response.error || 'Error al registrarse',
-          statusCode: response.statusCode 
+          error: response.error || 'Error al completar perfil'
         };
       }
     } catch (error: any) {
       return { 
         success: false, 
-        error: 'Error de conexión',
-        statusCode: error?.response?.status 
+        error: 'Error de conexión'
       };
     }
   };
 
   const logout = () => {
-    authService.logout();
     setUser(null);
     setIsLoggedIn(false);
+    setNeedsOnboarding(false);
+    // Note: This doesn't disconnect the wallet, just clears the user data
   };
 
   const refreshUser = async () => {
-    const response = await authService.getMe();
+    if (!walletAddress) return;
+    
+    const response = await authService.getUserByWallet(walletAddress);
     if (response.success && response.data) {
       setUser(response.data as User);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, register, logout, refreshUser, loading }}>
+    <AuthContext.Provider value={{ 
+      isLoggedIn, 
+      user, 
+      walletAddress,
+      needsOnboarding,
+      completeOnboarding,
+      logout, 
+      refreshUser, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

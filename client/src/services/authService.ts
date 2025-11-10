@@ -23,21 +23,47 @@ export interface RegisterData {
   walletAddress?: string;
 }
 
+export interface RegisterWalletData {
+  email: string;
+  name: string;
+  role: 'investor' | 'farmer';
+  walletAddress: string;
+}
+
 export interface AuthResponse {
   token: string;
   user: User;
 }
 
 class AuthService {
-  async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
-    const response = await api.post<AuthResponse>('/auth/register', data);
+  // Register with wallet (Google OAuth)
+  async registerWithWallet(data: RegisterWalletData): Promise<ApiResponse<AuthResponse>> {
+    const response = await api.post<AuthResponse>('/auth/register-wallet', data);
     
     if (response.success && response.data) {
       // Save token to localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('accountType', data.walletAddress ? 'google' : 'traditional');
+      }
+    }
+    
+    return response;
+  }
+
+  // Get user by wallet address
+  async getUserByWallet(walletAddress: string): Promise<ApiResponse<User>> {
+    return api.get<User>(`/users/wallet/${walletAddress}`);
+  }
+
+  // Legacy methods (mantener por compatibilidad)
+  async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
+    const response = await api.post<AuthResponse>('/auth/register', data);
+    
+    if (response.success && response.data) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
     }
     
@@ -48,26 +74,9 @@ class AuthService {
     const response = await api.post<AuthResponse>('/auth/login', credentials);
     
     if (response.success && response.data) {
-      // Save token to localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('accountType', 'traditional');
-      }
-    }
-    
-    return response;
-  }
-
-  async loginWithGoogle(idToken: string): Promise<ApiResponse<AuthResponse>> {
-    const response = await api.post<AuthResponse>('/auth/login', { idToken });
-    
-    if (response.success && response.data) {
-      // Save token to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('accountType', 'google');
       }
     }
     

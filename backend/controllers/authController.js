@@ -233,6 +233,60 @@ export const authController = {
             console.error('Login error:', err);
             return errorResponse(res, MESSAGES.GENERAL.SERVER_ERROR, 500);
         }
+    },
+
+    // NEW: Simple wallet-based registration (for Thirdweb Google OAuth)
+    // Thirdweb handles Google OAuth on client, we just create user with wallet + basic info
+    registerWallet: async (req, res) => {
+        try {
+            const { email, name, role, walletAddress } = req.body;
+
+            if (!email || !name || !role || !walletAddress) {
+                return errorResponse(res, 'Email, name, role, and walletAddress are required', 400);
+            }
+
+            // Validate role
+            if (!['farmer', 'investor'].includes(role)) {
+                return errorResponse(res, 'Role must be farmer or investor', 400);
+            }
+
+            // Check if user exists with this wallet or email
+            const existingWallet = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
+            if (existingWallet) {
+                return errorResponse(res, 'Wallet already registered', 409);
+            }
+
+            const existingEmail = await User.findOne({ email });
+            if (existingEmail) {
+                return errorResponse(res, 'Email already registered', 409);
+            }
+
+            // Parse name
+            const nameParts = name.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            // Create user without password (wallet-based auth)
+            const newUser = new User({
+                firstName,
+                lastName,
+                email,
+                walletAddress: walletAddress.toLowerCase(),
+                role,
+                emailVerified: true, // Assume verified since from Google OAuth
+                password: undefined, // No password for wallet-only accounts
+            });
+
+            await newUser.save();
+
+            const token = generateToken(newUser);
+            const safe = maskUser(newUser);
+
+            return successResponse(res, { user: safe, token }, 'Account created successfully', 201);
+        } catch (err) {
+            console.error('Register wallet error:', err);
+            return errorResponse(res, MESSAGES.GENERAL.SERVER_ERROR, 500);
+        }
     }
 
 };

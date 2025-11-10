@@ -7,6 +7,9 @@ const router = express.Router();
 // POST /api/auth/register
 router.post('/register', authController.register);
 
+// POST /api/auth/register-wallet - Register with wallet only (Thirdweb)
+router.post('/register-wallet', authController.registerWallet);
+
 // POST /api/auth/login
 router.post('/login', authController.login);
 
