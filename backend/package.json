@@ -8,10 +8,12 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "@thirdweb-dev/sdk": "^4.0.99",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
+    "ethers": "^5.8.0",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
     "google-auth-library": "^9.0.0",

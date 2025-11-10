@@ -14,9 +14,13 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import investmentRoutes from './routes/investmentRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
 import impactRoutes from './routes/impactRoutes.js';
+import blockchainRoutes from './routes/blockchainRoutes.js';
 
 // Import error handler
 import { errorHandler } from './middlewares/errorHandler.js';
+
+// Import blockchain service
+import blockchainService from './services/blockchainService.js';
 
 dotenv.config();
 
@@ -71,6 +75,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/impact', impactRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -86,25 +91,42 @@ app.use(errorHandler);
 
 // ============ DATABASE CONNECTION ============
 
-mongoose.connect(MONGO_URI, { 
-  serverSelectionTimeoutMS: 5000,
-  // Opciones recomendadas
-})
-  .then(() => {
+// Initialize services and start server
+async function startServer() {
+  try {
+    // Connect to MongoDB
+    await mongoose.connect(MONGO_URI, { 
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log('✅ Connected to MongoDB');
     console.log(`📊 Database: ${MONGO_URI}`);
+    
+    // Initialize Blockchain Service
+    try {
+      console.log('🔄 Initializing blockchain service...');
+      await blockchainService.initialize();
+      console.log('✅ Blockchain service initialized');
+    } catch (error) {
+      console.error('❌ ERROR: Blockchain service failed to initialize');
+      console.error('   This is non-blocking. Check your .env configuration.');
+      console.error(`   Error: ${error.message}`);
+      console.error('   Full error:', error);
+    }
     
     // Start server
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`🌐 Frontend URL: ${FRONTEND_URL}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`⛓️  Chain ID: ${process.env.CHAIN_ID || '11155111'} (Sepolia)`);
     });
-  })
-  .catch((err) => {
-    console.error('❌ Error connecting to MongoDB:', err);
+  } catch (err) {
+    console.error('❌ Error starting server:', err);
     process.exit(1);
-  });
+  }
+}
+
+startServer();
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
