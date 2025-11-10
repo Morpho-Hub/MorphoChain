@@ -14,3 +14,9 @@ export { default as Badge } from './Badge';
 export { default as Progress } from './Progress';
 export { default as Select } from './Select';
 export { default as Separator } from './Separator';
+
+// Web3 Components
+export { ConnectWalletButton } from './ConnectWalletButton';
+export { TokenBalance } from './TokenBalance';
+export { WalletInfo } from './WalletInfo';
+export { TransactionStatus } from './TransactionStatus';
