@@ -12,6 +12,9 @@ interface User {
   walletAddress: string;
   isVerified: boolean;
   avatar?: string;
+  phone?: string;
+  bio?: string;
+  birthdate?: string;
 }
 
 interface AuthContextType {
