@@ -1,7 +1,7 @@
 "use client";
 
 import { Filter, X, ShoppingBag, Leaf } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   Input,
@@ -17,35 +17,82 @@ import { SearchBar, Modal } from "@/src/molecules";
 import { ReceiptModal } from "@/src/organisms";
 import type { ReceiptData } from "@/src/organisms/Receipt";
 import { es } from "@/locales";
+import { farmService, productService, Farm, Product } from "@/src/services";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MarketplaceProps {
   onNavigate: (page: string) => void;
 }
 
-interface Asset {
-  id: number;
-  name: string;
+interface FarmWithProducts extends Farm {
+  products: Product[];
   farmer: string;
-  location: string;
-  category: string;
-  image: string;
-  status: string;
-  description: string;
   practices: string[];
-  products: { name: string; price: string; unit: string }[];
 }
 
 export function Marketplace({ onNavigate }: MarketplaceProps) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("all");
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<FarmWithProducts | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [productQuantity, setProductQuantity] = useState<{ [key: string]: number }>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [assets, setAssets] = useState<FarmWithProducts[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const t = es.marketplace;
+
+  // Load farms and products from backend
+  useEffect(() => {
+    const loadMarketplaceData = async () => {
+      try {
+        setLoading(true);
+        
+        // Get all active farms
+        const farmsResponse = await farmService.getAllFarms({ status: 'active' });
+        
+        if (farmsResponse.success && farmsResponse.data) {
+          // Load products for each farm
+          const farmsWithProducts = await Promise.all(
+            farmsResponse.data.map(async (farm) => {
+              const productsResponse = await productService.getProductsByFarm(farm._id);
+              
+              const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
+                ? (farm.owner as any).name 
+                : 'Agricultor';
+              
+              return {
+                ...farm,
+                id: farm._id,
+                farmer: farmOwner,
+                image: farm.images?.[0] || '/default-farm.jpg',
+                status: farm.status === 'active' ? 'Activo' : 'Inactivo',
+                practices: farm.practices || [],
+                products: (productsResponse.success && productsResponse.data) 
+                  ? productsResponse.data.filter(p => p.status === 'available').map(p => ({
+                      ...p,
+                      price: `$${p.price}`,
+                    }))
+                  : [],
+              };
+            })
+          );
+          
+          // Filter farms that have products
+          setAssets(farmsWithProducts.filter(f => f.products.length > 0));
+        }
+      } catch (error) {
+        console.error('Error loading marketplace data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMarketplaceData();
+  }, []);
 
   const categoryOptions = [
     { value: "all", label: t.categories.all },
@@ -64,136 +111,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
     { value: "alajuela", label: t.regions.alajuela },
   ];
 
-  const assets: Asset[] = [
-    {
-      id: 1,
-      name: "Finca Verde - Plantación de Café",
-      farmer: "Juan Pérez",
-      location: "Cartago, Costa Rica",
-      category: "Café",
-      image: "https://images.unsplash.com/photo-1663125365404-e274869480f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBiZWFucyUyMGZhcm18ZW58MXx8fHwxNzYwNjAzNjMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      status: "Activo",
-      description: "Plantación de café orgánico de altura en Cartago, cultivado bajo sombra con prácticas regenerativas.",
-      practices: [
-        "Cultivo bajo sombra",
-        "Compostaje orgánico",
-        "Control biológico de plagas",
-        "Conservación de agua",
-      ],
-      products: [
-        { name: "Café Verde Premium", price: "$18", unit: "lb" },
-        { name: "Café Tostado Artesanal", price: "$22", unit: "lb" },
-        { name: "Café Molido Orgánico", price: "$20", unit: "lb" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Cacao del Sol - Cacao Orgánico",
-      farmer: "María Rodríguez",
-      location: "Limón, Costa Rica",
-      category: "Cacao",
-      image: "https://images.unsplash.com/photo-1720170723453-dd9de7397bd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWNhbyUyMHBvZHN8ZW58MXx8fHwxNzYwNjc2Mzc2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      status: "Activo",
-      description: "Finca familiar de cacao orgánico certificado, usando agroforestería tropical.",
-      practices: [
-        "Agroforestería tropical",
-        "Certificación orgánica",
-        "Fermentación tradicional",
-        "Biodiversidad nativa",
-      ],
-      products: [
-        { name: "Cacao en Grano Premium", price: "$15", unit: "lb" },
-        { name: "Nibs de Cacao Orgánico", price: "$18", unit: "lb" },
-        { name: "Pasta de Cacao 100%", price: "$25", unit: "lb" },
-      ],
-    },
-    {
-      id: 3,
-      name: "Cooperativa de Banano Tropical",
-      farmer: "Carlos Jiménez",
-      location: "Puntarenas, Costa Rica",
-      category: "Banano",
-      image: "https://images.unsplash.com/photo-1653481006616-aab561a77a3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYW5hbmElMjBwbGFudGF0aW9ufGVufDF8fHx8MTc2MDY3NjM3N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      status: "Activo",
-      description: "Cooperativa de pequeños productores de banano orgánico con comercio justo.",
-      practices: [
-        "Comercio justo",
-        "Rotación de cultivos",
-        "Manejo integrado de plagas",
-        "Reciclaje de residuos",
-      ],
-      products: [
-        { name: "Banano Orgánico", price: "$3", unit: "kg" },
-        { name: "Plátano Maduro", price: "$2.50", unit: "kg" },
-        { name: "Chips de Plátano", price: "$8", unit: "lb" },
-      ],
-    },
-    {
-      id: 4,
-      name: "Campos de Piña Dorada",
-      farmer: "Ana Sánchez",
-      location: "Alajuela, Costa Rica",
-      category: "Piña",
-      image: "https://images.unsplash.com/photo-1694872581803-b279e7a63f7f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaW5lYXBwbGUlMjBmaWVsZHxlbnwxfHx8fDE3NjA2NzYzNzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      status: "Activo",
-      description: "Cultivo de piña dorada con enfoque en reducir el impacto ambiental.",
-      practices: [
-        "Cobertura vegetal",
-        "Fertilización orgánica",
-        "Control natural de malezas",
-        "Captación de agua",
-      ],
-      products: [
-        { name: "Piña Dorada Fresca", price: "$4", unit: "unidad" },
-        { name: "Piña Deshidratada", price: "$12", unit: "lb" },
-        { name: "Jugo de Piña Natural", price: "$6", unit: "litro" },
-      ],
-    },
-    {
-      id: 5,
-      name: "Montaña Verde - Café Premium",
-      farmer: "Luis Mora",
-      location: "Cartago, Costa Rica",
-      category: "Café",
-      image: "https://images.unsplash.com/photo-1663125365404-e274869480f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBiZWFucyUyMGZhcm18ZW58MXx8fHwxNzYwNjAzNjMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      status: "Popular",
-      description: "Café premium de especialidad, cultivado en alta montaña con métodos regenerativos.",
-      practices: [
-        "Café de especialidad",
-        "Reforestación activa",
-        "Microorganismos eficientes",
-        "Captura de carbono",
-      ],
-      products: [
-        { name: "Café Especial Geisha", price: "$35", unit: "lb" },
-        { name: "Café de Altura Premium", price: "$28", unit: "lb" },
-        { name: "Café Cold Brew Concentrado", price: "$15", unit: "botella" },
-      ],
-    },
-    {
-      id: 6,
-      name: "Cacao Herencia - Finca Familiar",
-      farmer: "Isabella García",
-      location: "Limón, Costa Rica",
-      category: "Cacao",
-      image: "https://images.unsplash.com/photo-1720170723453-dd9de7397bd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWNhbyUyMHBvZHN8ZW58MXx8fHwxNzYwNjc2Mzc2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      status: "Activo",
-      description: "Finca familiar multigeneracional de cacao fino de aroma.",
-      practices: [
-        "Variedades ancestrales",
-        "Conocimiento tradicional",
-        "Agroecología",
-        "Conservación genética",
-      ],
-      products: [
-        { name: "Cacao Fino de Aroma", price: "$20", unit: "lb" },
-        { name: "Chocolate Artesanal 85%", price: "$8", unit: "barra" },
-        { name: "Manteca de Cacao Pura", price: "$30", unit: "lb" },
-      ],
-    },
-  ];
-
-  const handleBuyProduct = () => {
+  const handleBuyProduct = async () => {
     if (!selectedAsset) return;
 
     // Calculate purchase details
@@ -212,7 +130,6 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       (sum, item) => sum + item.quantity * item.unitPrice,
       0
     );
-    // TODO: Get regenerativeRewardPercentage from backend (e.g., 5%)
     const regenerativeRewardPercentage = 0.05; // 5% por defecto
     const regenerativeReward = subtotal * regenerativeRewardPercentage;
     const total = subtotal + regenerativeReward;
@@ -221,8 +138,8 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
     const receipt: ReceiptData = {
       orderNumber: `MCH-${Date.now().toString().slice(-8)}`,
       date: new Date().toISOString(),
-      buyerName: "Usuario Inversor", // TODO: Get from auth context
-      buyerEmail: "usuario@example.com", // TODO: Get from auth context
+      buyerName: user?.name || "Usuario Inversor",
+      buyerEmail: user?.email || "usuario@example.com",
       sellerName: selectedAsset.farmer,
       farmName: selectedAsset.name,
       farmLocation: selectedAsset.location,
@@ -238,7 +155,13 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
     setProductQuantity({});
     setShowReceipt(true);
     
-    // TODO: Save purchase to database/localStorage
+    // TODO: Save purchase transaction to backend
+    // await transactionService.createTransaction({
+    //   type: 'purchase',
+    //   amount: total,
+    //   relatedEntity: { type: 'farm', id: selectedAsset._id },
+    //   metadata: { products: purchasedProducts }
+    // });
   };
 
   return (
@@ -286,9 +209,17 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
           </div>
         </Card>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <Text className="text-xl text-gray-600">Cargando fincas...</Text>
+          </div>
+        )}
+
         {/* Assets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assets
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {assets
             .filter((asset) => {
               const matchesSearch = searchQuery === "" ||
                 asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -305,9 +236,9 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
               
               return matchesSearch && matchesCategory && matchesRegion;
             })
-            .map((asset) => (
+              .map((asset) => (
               <Card
-                key={asset.id}
+                key={asset._id}
                 className="rounded-2xl overflow-hidden border-2 border-[#d1e751]/30"
               >
                 <div
@@ -343,7 +274,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                         Productos Disponibles:
                       </Text>
                       <div className="space-y-1">
-                        {asset.products.slice(0, 3).map((product, idx) => (
+                        {asset.products.slice(0, 3).map((product: any, idx: number) => (
                           <div key={idx} className="flex justify-between items-center">
                             <Text variant="small" className="text-[#000000]/70">
                               • {product.name}
@@ -359,9 +290,15 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                 </div>
               </Card>
             ))}
-        </div>
+          </div>
+        )}
 
-        {/* Load More */}
+        {/* No Results */}
+        {!loading && assets.length === 0 && (
+          <div className="text-center py-12">
+            <Text className="text-xl text-gray-600">No se encontraron fincas con productos disponibles</Text>
+          </div>
+        )}        {/* Load More */}
         <div className="text-center pt-8">
           <Button
             title={t.actions.loadMore}

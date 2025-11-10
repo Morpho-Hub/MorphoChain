@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { 
@@ -26,51 +26,7 @@ import { ProductListingForm, FarmForm, VerificationAlert } from '@/src/organisms
 import type { Farm } from '@/src/molecules/FarmCard';
 import type { ProductListing } from '@/src/organisms/ProductListingForm';
 import { es } from '@/locales';
-
-// Datos de ejemplo - en producción vendrían de una API
-const mockFarms: Record<string, Farm> = {
-  '1': {
-    id: '1',
-    name: 'Finca Verde - Café Orgánico',
-    location: 'Cartago, Costa Rica',
-    description: 'Finca especializada en café orgánico de altura con prácticas regenerativas. Llevamos 15 años cultivando café de especialidad utilizando métodos sostenibles que protegen el ecosistema local.',
-    estimatedEarnings: 45600,
-    receivedEarnings: 32400,
-    productSalesEarnings: 28900,
-    tokenEarnings: 3500,
-    products: ['Café Arábica', 'Café Robusta'],
-    productsCount: 2,
-    sustainability: 92,
-    practices: 3,
-    images: ['https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800'],
-    certifications: ['Certificación Orgánica USDA', 'Fair Trade', 'Rainforest Alliance'],
-    environmentalMetrics: {
-      carbonReduction: 12.5,
-      waterSaved: 850,
-      biodiversityIndex: 92,
-      soilHealth: 88,
-      lastVerificationDate: '2025-10-15T00:00:00.000Z',
-      nextVerificationDate: '2025-11-15T00:00:00.000Z',
-      verificationStatus: 'verified' as const,
-    },
-  },
-  '2': {
-    id: '2',
-    name: 'Huerto Esperanza',
-    location: 'Alajuela, Costa Rica',
-    description: 'Cultivo diversificado de vegetales y hortalizas',
-    estimatedEarnings: 28300,
-    receivedEarnings: 21500,
-    productSalesEarnings: 18700,
-    tokenEarnings: 2800,
-    products: ['Tomate Cherry', 'Lechuga', 'Zanahoria'],
-    productsCount: 3,
-    sustainability: 88,
-    practices: 3,
-    images: ['https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800'],
-    certifications: ['Certificación Orgánica Local'],
-  },
-};
+import { farmService, productService, impactMetricsService } from '@/src/services';
 
 export default function FarmDetailPage() {
   const router = useRouter();
@@ -78,7 +34,8 @@ export default function FarmDetailPage() {
   const farmId = params.id as string;
   const t = es.farmDetail;
 
-  const [farm, setFarm] = useState<Farm | undefined>(mockFarms[farmId]);
+  const [farm, setFarm] = useState<Farm | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'metrics' | 'salesHistory'>('overview');
   const [productListings, setProductListings] = useState<ProductListing[]>([]);
   const [showProductForm, setShowProductForm] = useState(false);

@@ -1,91 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Search, TrendingUp } from 'lucide-react';
 import { Heading, Text, Card, Button, Select } from '@/src/atoms';
 import { SearchBar, ProductInventoryCard } from '@/src/molecules';
 import type { ProductInventory } from '@/src/molecules/ProductInventoryCard';
 import { es } from '@/locales';
 import { useRouter } from 'next/navigation';
-
-// Mock data - En producción esto vendría del backend
-const mockInventory: ProductInventory[] = [
-  {
-    id: '1',
-    name: 'Café Verde Premium',
-    farmName: 'Finca Verde - Plantación de Café',
-    farmId: 'farm-1',
-    currentStock: 250,
-    unit: 'lb',
-    price: 18,
-    lastUpdated: '2025-01-20T14:30:00Z',
-    lowStockThreshold: 50,
-  },
-  {
-    id: '2',
-    name: 'Café Tostado Artesanal',
-    farmName: 'Finca Verde - Plantación de Café',
-    farmId: 'farm-1',
-    currentStock: 120,
-    unit: 'lb',
-    price: 22,
-    lastUpdated: '2025-01-20T14:30:00Z',
-    lowStockThreshold: 30,
-  },
-  {
-    id: '3',
-    name: 'Café Molido Orgánico',
-    farmName: 'Finca Verde - Plantación de Café',
-    farmId: 'farm-1',
-    currentStock: 35,
-    unit: 'lb',
-    price: 20,
-    lastUpdated: '2025-01-20T14:30:00Z',
-    lowStockThreshold: 40,
-  },
-  {
-    id: '4',
-    name: 'Cacao en Grano Premium',
-    farmName: 'Cacao del Sol - Cacao Orgánico',
-    farmId: 'farm-2',
-    currentStock: 180,
-    unit: 'lb',
-    price: 15,
-    lastUpdated: '2025-01-19T10:15:00Z',
-    lowStockThreshold: 50,
-  },
-  {
-    id: '5',
-    name: 'Nibs de Cacao Orgánico',
-    farmName: 'Cacao del Sol - Cacao Orgánico',
-    farmId: 'farm-2',
-    currentStock: 0,
-    unit: 'lb',
-    price: 18,
-    lastUpdated: '2025-01-18T16:45:00Z',
-    lowStockThreshold: 30,
-  },
-  {
-    id: '6',
-    name: 'Pasta de Cacao 100%',
-    farmName: 'Cacao del Sol - Cacao Orgánico',
-    farmId: 'farm-2',
-    currentStock: 22,
-    unit: 'lb',
-    price: 25,
-    lastUpdated: '2025-01-19T10:15:00Z',
-    lowStockThreshold: 25,
-  },
-];
+import { productService, farmService } from '@/src/services';
 
 export default function InventoryPage() {
   const router = useRouter();
-  const [inventory, setInventory] = useState<ProductInventory[]>(mockInventory);
+  const [inventory, setInventory] = useState<ProductInventory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFarm, setSelectedFarm] = useState('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all');
+  const [loading, setLoading] = useState(true);
   
   const t = es.inventory;
+
+  // Load products from backend
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        setLoading(true);
+        const response = await productService.getAllProducts();
+        
+        if (response.success && response.data) {
+          const formattedInventory: ProductInventory[] = response.data.map(product => {
+            const farm = typeof product.farm === 'object' ? product.farm : null;
+            
+            return {
+              id: product._id,
+              name: product.name,
+              farmName: farm?.name || 'Finca',
+              farmId: typeof product.farm === 'string' ? product.farm : farm?._id || '',
+              currentStock: product.stock,
+              unit: product.unit,
+              price: product.price,
+              lastUpdated: product.updatedAt || new Date().toISOString(),
+              lowStockThreshold: 30, // Default threshold
+            };
+          });
+          
+          setInventory(formattedInventory);
+        }
+      } catch (error) {
+        console.error('Error loading inventory:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInventory();
+  }, []);
 
   // Get unique farms
   const farms = Array.from(new Set(inventory.map(p => p.farmName))).map(name => ({

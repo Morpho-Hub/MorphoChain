@@ -9,6 +9,8 @@ interface FormFieldProps {
   placeholder: string;
   required?: boolean;
   className?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const FormField: FC<FormFieldProps> = ({
@@ -18,6 +20,8 @@ const FormField: FC<FormFieldProps> = ({
   placeholder,
   required = false,
   className = "",
+  value,
+  onChange,
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
@@ -28,6 +32,8 @@ const FormField: FC<FormFieldProps> = ({
         placeholder={placeholder}
         className="rounded-xl border-[#000000]/20 focus:border-[#d1e751]"
         required={required}
+        value={value}
+        onChange={onChange}
       />
     </div>
   );

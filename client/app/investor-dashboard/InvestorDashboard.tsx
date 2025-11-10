@@ -10,126 +10,174 @@ import { PortfolioOverview } from "@/src/organisms/PortfolioOverview";
 import { ImpactDashboard } from "@/src/organisms/ImpactDashboard";
 import { useRouter } from "next/navigation";
 import { es } from "@/locales";
+import { useState, useEffect } from "react";
+import { dashboardService, investmentService, impactMetricsService } from "@/src/services";
 
 const PortfolioPage: React.FC = () => {
   const router = useRouter();
   const t = es.InvestorDashboard;
+  const [loading, setLoading] = useState(true);
+  const [portfolioData, setPortfolioData] = useState({
+    totalValue: 0,       
+    activeTokens: 0,
+    farmsCount: 0,
+    avgMonthlyROI: 0,    
+    roiChange: 0,   
+    impactScore: 0,
+    impactLabel: 'Sin datos',
+    growthPercentage: 0, 
+  });
+  const [myInvestments, setMyInvestments] = useState<any[]>([]);
+  const [impactData, setImpactData] = useState<any>(null);
+  const [portfolioChartData, setPortfolioChartData] = useState<PieChartData[]>([]);
+  const [performanceData, setPerformanceData] = useState<LineChartData[]>([]);
 
-  const portfolioDataExample = {
-    totalValue: 25175,       
-    activeTokens: 100,
-    farmsCount: 8,
-    avgMonthlyROI: 9.8,    
-    roiChange: 1.2,   
-    impactScore: 88,
-    impactLabel: 'Excelente',
-    growthPercentage: 22.5, 
-  };
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load portfolio stats
+        const statsResponse = await investmentService.getPortfolioStats();
+        if (statsResponse.success && statsResponse.data) {
+          const stats = statsResponse.data;
+          setPortfolioData({
+            totalValue: stats.totalValue,
+            activeTokens: stats.activeInvestments,
+            farmsCount: stats.farmsCount,
+            avgMonthlyROI: stats.avgMonthlyROI,
+            roiChange: stats.totalROI > 0 ? 1.2 : -0.5,
+            impactScore: 88, // TODO: Calculate from metrics
+            impactLabel: stats.totalROI > 10 ? 'Excelente' : 'Bueno',
+            growthPercentage: ((stats.totalValue - stats.totalInvested) / stats.totalInvested) * 100,
+          });
+        }
 
-  const impactData = {
+        // Load my investments
+        const investmentsResponse = await investmentService.getMyInvestments();
+        if (investmentsResponse.success && investmentsResponse.data) {
+          const formattedInvestments = investmentsResponse.data.map((inv: any) => {
+            const farm = typeof inv.farm === 'object' ? inv.farm : null;
+            const roi = inv.roi || 0;
+            
+            return {
+              id: inv._id,
+              name: farm?.name || 'Finca',
+              location: farm?.location || 'Costa Rica',
+              tokens: inv.tokensAmount,
+              value: `$${inv.currentValue?.toFixed(2) || inv.amount.toFixed(2)}`,
+              invested: `$${inv.amount.toFixed(2)}`,
+              roi: roi >= 0 ? `+${roi.toFixed(1)}%` : `${roi.toFixed(1)}%`,
+              trend: roi >= 0 ? 'up' as const : 'down' as const,
+              impactScore: farm?.impactMetrics?.soilHealth || 0,
+              soilHealth: farm?.impactMetrics?.soilHealth || 0,
+              carbonScore: farm?.impactMetrics?.carbonScore || 0,
+              vegetationIndex: farm?.impactMetrics?.vegetationIndex || 0,
+              isVerified: farm?.verificationStatus === 'verified',
+            };
+          });
+          setMyInvestments(formattedInvestments);
+        }
+
+        // Load impact metrics
+        const impactResponse = await impactMetricsService.getMyAggregatedImpact();
+        if (impactResponse.success && impactResponse.data) {
+          const impact = impactResponse.data;
+          setImpactData({
+            metrics: [
+              {
+                value: `${impact.totalCO2Sequestered.toFixed(1)} tons`,
+                label: "CO₂ Secuestrado",
+                progress: 78,
+                progressLabel: "78% de la meta anual",
+                icon: Sprout,
+                theme: "light" as const
+              },
+              {
+                value: `${(impact.totalWaterConserved / 1000).toFixed(1)}K gal`,
+                label: "Agua Conservada",
+                progress: 85,
+                progressLabel: "85% de la meta anual",
+                icon: Droplet,
+                theme: "light" as const
+              },
+              {
+                value: `${impact.totalSoilRestored.toFixed(1)} ha`,
+                label: "Suelo Restaurado",
+                progress: 92,
+                progressLabel: "92% de mejora",
+                icon: Globe,
+                theme: "light" as const
+              },
+              {
+                value: `+${impact.avgBiodiversity.toFixed(0)}%`,
+                label: "Biodiversidad",
+                progress: impact.avgBiodiversity,
+                progressLabel: `${impact.avgBiodiversity}% de aumento`,
+                icon: Leaf,
+                theme: "light" as const
+              }
+            ],
+            achievement: {
+              title: "Logro de Impacto Desbloqueado",
+              description: `Has ayudado a restaurar más de ${impact.totalSoilRestored.toFixed(1)} hectáreas de tierras agrícolas costarricenses`
+            }
+          });
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  // Default impact data structure
+  const defaultImpactData = {
     metrics: [
       {
-        value: "42 tons",
+        value: "0 tons",
         label: "CO₂ Secuestrado",
-        progress: 78,
-        progressLabel: "78% de la meta anual",
+        progress: 0,
+        progressLabel: "Sin datos",
         icon: Sprout,
         theme: "light" as const
       },
       {
-        value: "12K gal",
+        value: "0K gal",
         label: "Agua Conservada",
-        progress: 85,
-        progressLabel: "85% de la meta anual",
+        progress: 0,
+        progressLabel: "Sin datos",
         icon: Droplet,
         theme: "light" as const
       },
       {
-        value: "8.5 ha",
+        value: "0 ha",
         label: "Suelo Restaurado",
-        progress: 92,
-        progressLabel: "92% de mejora",
+        progress: 0,
+        progressLabel: "Sin datos",
         icon: Globe,
         theme: "light" as const
       },
       {
-        value: "+35%",
+        value: "+0%",
         label: "Biodiversidad",
-        progress: 88,
-        progressLabel: "88% de aumento",
+        progress: 0,
+        progressLabel: "Sin datos",
         icon: Leaf,
         theme: "light" as const
       }
     ],
     achievement: {
-      title: "Logro de Impacto Desbloqueado",
-      description: "Has ayudado a restaurar más de 8 hectáreas de tierras agrícolas costarricenses"
+      title: "Comienza a Invertir",
+      description: "Realiza tu primera inversión para empezar a generar impacto positivo"
     }
   };
 
-  const myInvestments = [
-    {
-      id: 1,
-      name: "Finca Verde - Café",
-      location: "Cartago, Costa Rica",
-      tokens: 45,
-      value: "$11,250",
-      invested: "$10,000",
-      roi: "+12.5%",
-      trend: "up" as const,
-      impactScore: 92,
-      soilHealth: 92,
-      carbonScore: 88,
-      vegetationIndex: 90,
-      isVerified: true,
-    },
-    {
-      id: 3,
-      name: "Finca Verde - Café",
-      location: "Cartago, Costa Rica",
-      tokens: 45,
-      value: "$11,250",
-      invested: "$10,000",
-      roi: "+12.5%",
-      trend: "up" as const,
-      impactScore: 92,
-      soilHealth: 92,
-      carbonScore: 88,
-      vegetationIndex: 90,
-      isVerified: true,
-    },
-    {
-      id: 2,
-      name: "Finca Verde - Café",
-      location: "Cartago, Costa Rica",
-      tokens: 45,
-      value: "$11,250",
-      invested: "$10,000",
-      roi: "+12.5%",
-      trend: "down" as const,
-      impactScore: 92,
-      soilHealth: 23,
-      carbonScore: 88,
-      vegetationIndex: 90,
-      isVerified: false,
-    },
-  ];
-
-  const portfolioData: PieChartData[] = [
-    { name: "Café", value: 35, color: "#d1e751" },
-    { name: "Cacao", value: 28, color: "#4dbce9" },
-    { name: "Banano", value: 20, color: "#26ade4" },
-    { name: "Otro", value: 17, color: "#000000" },
-  ];
-
-  const performanceData: LineChartData[] = [
-    { month: "Ene", value: 10300 },
-    { month: "Feb", value: 10500 },
-    { month: "Mar", value: 10800 },
-    { month: "Abr", value: 11110 },
-    { month: "May", value: 11800 },
-    { month: "Jun", value: 12250 },
-  ];
+  const displayImpactData = impactData || defaultImpactData;
 
   type PerformanceChange = {
   percentage: string;
@@ -153,6 +201,16 @@ const PortfolioPage: React.FC = () => {
   const formattedPercentage = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
 
   return { percentage: formattedPercentage, direction };
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Cargando dashboard...</h2>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -181,33 +239,33 @@ const PortfolioPage: React.FC = () => {
         {/* Tile 1 - Valor Total del Portafolio */}
         <TileStats
           icon={<DollarSign size={28} />}
-          value={`$ ${portfolioDataExample.totalValue.toLocaleString()}`}
+          value={`$ ${portfolioData.totalValue.toLocaleString()}`}
           description={t.portfolio.totalValue}
-          status={t.portfolio.growth(portfolioDataExample.growthPercentage)}
+          status={t.portfolio.growth(portfolioData.growthPercentage)}
         />
 
         {/* Tile 2 - Tokens Activos */}
         <TileStats
           icon={<Coins size={28} />}
-          value={portfolioDataExample.activeTokens.toString()}
+          value={portfolioData.activeTokens.toString()}
           description={t.portfolio.activeTokens}
-          status={t.portfolio.farmsCount(portfolioDataExample.farmsCount)}
+          status={t.portfolio.farmsCount(portfolioData.farmsCount)}
         />
 
         {/* Tile 3 - ROI Mensual Promedio */}
         <TileStats
           icon={<ChartLine size={28} />}
-          value={`${portfolioDataExample.avgMonthlyROI}%`}
+          value={`${portfolioData.avgMonthlyROI.toFixed(1)}%`}
           description={t.portfolio.avgMonthlyROI}
-          status={t.portfolio.roiChange(portfolioDataExample.roiChange)}
+          status={t.portfolio.roiChange(portfolioData.roiChange)}
         />
 
         {/* Tile 4 - Puntuación de Impacto */}
         <TileStats
           icon={<Leaf size={28} />}
-          value={portfolioDataExample.impactScore.toString()}
+          value={portfolioData.impactScore.toString()}
           description={t.portfolio.impactScore}
-          status={portfolioDataExample.impactLabel}
+          status={portfolioData.impactLabel}
         />
       </section>
 
@@ -223,7 +281,7 @@ const PortfolioPage: React.FC = () => {
         titlePortfolioDistribution={t.charts.portfolioDistribution}
         titlePortfolioPerformance={t.charts.portfolioPerformance}
         statCardLabel={t.charts.totalGrowth}
-        portfolioData={portfolioData}
+        portfolioData={portfolioChartData}
         performanceData={performanceData}
         growth={{ 
           percentage: getPerformanceChange(performanceData).percentage, 
@@ -233,7 +291,7 @@ const PortfolioPage: React.FC = () => {
       
       {/* Verified Impact Metrics */}
       <ImpactDashboard 
-        impactData={impactData} 
+        impactData={displayImpactData} 
         title={t.impact.title} 
       />
       </div>

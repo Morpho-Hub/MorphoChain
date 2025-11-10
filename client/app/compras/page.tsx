@@ -1,73 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, ShoppingBag, Calendar, FileText } from 'lucide-react';
 import { Button, Card, Heading, Text, Badge, Separator } from '@/src/atoms';
 import { ReceiptModal } from '@/src/organisms';
 import type { ReceiptData } from '@/src/organisms/Receipt';
 import { es } from '@/locales';
 import { useRouter } from 'next/navigation';
-
-// Mock data - En producción esto vendría de una API o localStorage
-const mockPurchases: ReceiptData[] = [
-  {
-    orderNumber: 'MCH-12345678',
-    date: '2025-01-15T10:30:00Z',
-    buyerName: 'María González',
-    buyerEmail: 'maria@example.com',
-    sellerName: 'Juan Pérez',
-    farmName: 'Finca Verde - Plantación de Café',
-    farmLocation: 'Cartago, Costa Rica',
-    products: [
-      { name: 'Café Verde Premium', quantity: 5, unitPrice: 18, unit: 'lb' },
-      { name: 'Café Tostado Artesanal', quantity: 3, unitPrice: 22, unit: 'lb' },
-    ],
-    subtotal: 156,
-    regenerativeReward: 7.8, // 5% recompensa
-    total: 163.8,
-    status: 'paid',
-  },
-  {
-    orderNumber: 'MCH-12345679',
-    date: '2025-01-10T14:20:00Z',
-    buyerName: 'María González',
-    buyerEmail: 'maria@example.com',
-    sellerName: 'María Rodríguez',
-    farmName: 'Cacao del Sol - Cacao Orgánico',
-    farmLocation: 'Limón, Costa Rica',
-    products: [
-      { name: 'Cacao en Grano Premium', quantity: 10, unitPrice: 15, unit: 'lb' },
-    ],
-    subtotal: 150,
-    regenerativeReward: 7.5, // 5% recompensa
-    total: 157.5,
-    status: 'paid',
-  },
-  {
-    orderNumber: 'MCH-12345680',
-    date: '2024-12-28T09:15:00Z',
-    buyerName: 'María González',
-    buyerEmail: 'maria@example.com',
-    sellerName: 'Carlos Jiménez',
-    farmName: 'Cooperativa de Banano Tropical',
-    farmLocation: 'Puntarenas, Costa Rica',
-    products: [
-      { name: 'Banano Orgánico Premium', quantity: 20, unitPrice: 12, unit: 'caja' },
-    ],
-    subtotal: 240,
-    regenerativeReward: 12, // 5% recompensa
-    total: 252,
-    status: 'paid',
-  },
-];
+import { transactionService } from '@/src/services';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PurchasesPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [purchases, setPurchases] = useState<ReceiptData[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending'>('all');
+  const [loading, setLoading] = useState(true);
   
   const t = es.purchases;
+
+  // Load purchases from backend
+  useEffect(() => {
+    const loadPurchases = async () => {
+      try {
+        setLoading(true);
+        const response = await transactionService.getMyTransactions();
+        
+        if (response.success && response.data) {
+          // Filter only purchase transactions and format them as ReceiptData
+          const purchaseReceipts = response.data
+            .filter(tx => tx.type === 'purchase')
+            .map(tx => {
+              const metadata = tx.metadata || {};
+              
+              return {
+                orderNumber: `MCH-${tx._id.slice(-8)}`,
+                date: tx.createdAt || new Date().toISOString(),
+                buyerName: user?.name || 'Usuario',
+                buyerEmail: user?.email || '',
+                sellerName: metadata.sellerName || 'Agricultor',
+                farmName: metadata.farmName || 'Finca',
+                farmLocation: metadata.farmLocation || 'Costa Rica',
+                products: metadata.products || [],
+                subtotal: metadata.subtotal || tx.amount,
+                regenerativeReward: metadata.regenerativeReward || 0,
+                total: tx.amount,
+                status: tx.status === 'completed' ? 'paid' as const : 'pending' as const,
+              };
+            });
+          
+          setPurchases(purchaseReceipts);
+        }
+      } catch (error) {
+        console.error('Error loading purchases:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPurchases();
+  }, [user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CR', {
@@ -85,7 +79,7 @@ export default function PurchasesPage() {
     });
   };
 
-  const filteredPurchases = mockPurchases.filter(purchase => {
+  const filteredPurchases = purchases.filter(purchase => {
     if (filterStatus === 'all') return true;
     return purchase.status === filterStatus;
   });
@@ -94,6 +88,14 @@ export default function PurchasesPage() {
     setSelectedReceipt(purchase);
     setShowReceipt(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <Text className="text-xl">Cargando compras...</Text>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero py-8 px-4 sm:px-6 lg:px-8">

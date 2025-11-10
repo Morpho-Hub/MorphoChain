@@ -1,6 +1,7 @@
 "use client";
 
 import { ThirdwebProvider } from "thirdweb/react";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -9,7 +10,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThirdwebProvider>
-      {children}
+      <AuthProvider>
+        {children}
+      </AuthProvider>
     </ThirdwebProvider>
   );
 }

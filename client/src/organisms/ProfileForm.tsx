@@ -37,6 +37,13 @@ interface ProfileFormProps {
   onSubmit: (e: React.FormEvent) => void;
   onBack: () => void;
   className?: string;
+  formData?: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  };
+  onFormChange?: (field: string, value: string) => void;
 }
 
 const ProfileForm: FC<ProfileFormProps> = ({
@@ -51,6 +58,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
   onSubmit,
   onBack,
   className = "",
+  formData,
+  onFormChange,
 }) => {
   const [isCompanyInvestor, setIsCompanyInvestor] = useState(false);
 
@@ -69,6 +78,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
           label={labels.fullName}
           type="text"
           placeholder={placeholders.fullName}
+          value={formData?.name || ""}
+          onChange={(e) => onFormChange?.("name", e.target.value)}
           required
         />
 
@@ -77,6 +88,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
           label={labels.email}
           type="email"
           placeholder={placeholders.email}
+          value={formData?.email || ""}
+          onChange={(e) => onFormChange?.("email", e.target.value)}
           required
         />
 
@@ -85,6 +98,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
           label={labels.password}
           type="password"
           placeholder={placeholders.password}
+          value={formData?.password || ""}
+          onChange={(e) => onFormChange?.("password", e.target.value)}
           required
         />
 
@@ -93,6 +108,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
           label={labels.confirmPassword}
           type="password"
           placeholder={placeholders.password}
+          value={formData?.confirmPassword || ""}
+          onChange={(e) => onFormChange?.("confirmPassword", e.target.value)}
           required
         />
 
@@ -132,8 +149,8 @@ const ProfileForm: FC<ProfileFormProps> = ({
         )}
 
         <Button
+          type="submit"
           title={submitButtonText}
-          onClick={onSubmit}
           variant="blue"
           className="w-full bg-[#26ade4] hover:bg-[#26ade4]/90 text-white rounded-xl py-6"
         />
