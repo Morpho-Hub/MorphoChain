@@ -1,6 +1,8 @@
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.js';
+import { successResponse, errorResponse } from '../utils/apiResponse.js';
+import { MESSAGES } from '../constants/messages.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -12,7 +14,12 @@ const maskUser = (user) => {
         email: user.email,
         walletAddress: user.walletAddress,
         profilePicture: user.profilePicture,
-        role: user.role
+        role: user.role,
+        bio: user.bio,
+        tokenBalance: user.tokenBalance,
+        impactMetrics: user.impactMetrics,
+        farmerData: user.role === 'farmer' ? user.farmerData : undefined,
+        investorData: user.role === 'investor' ? user.investorData : undefined,
     };
 };
 
@@ -22,8 +29,8 @@ export const authController = {
     register: async (req, res) => {
         try {
             const { idToken, walletAddress } = req.body;
-            if (!idToken) return res.status(400).json({ message: 'idToken is required' });
-            if (!walletAddress) return res.status(400).json({ message: 'walletAddress is required' });
+            if (!idToken) return errorResponse(res, 'idToken is required', 400);
+            if (!walletAddress) return errorResponse(res, 'walletAddress is required', 400);
 
             // Verify Google ID token
             const ticket = await googleClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
@@ -36,10 +43,10 @@ export const authController = {
 
             // Check if user with same wallet or email exists
             const existingWallet = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
-            if (existingWallet) return res.status(409).json({ message: 'Wallet already registered' });
+            if (existingWallet) return errorResponse(res, 'Wallet already registered', 409);
 
             const existingEmail = await User.findOne({ email });
-            if (existingEmail) return res.status(409).json({ message: 'Email already registered' });
+            if (existingEmail) return errorResponse(res, 'Email already registered', 409);
 
             // Create user
             const newUser = new User({
@@ -54,10 +61,10 @@ export const authController = {
             await newUser.save();
 
             const safe = maskUser(newUser);
-            return res.status(201).json({ user: safe });
+            return successResponse(res, { user: safe }, MESSAGES.AUTH.REGISTER_SUCCESS, 201);
         } catch (err) {
             console.error('Register error:', err);
-            return res.status(500).json({ message: 'Internal server error' });
+            return errorResponse(res, MESSAGES.GENERAL.SERVER_ERROR, 500);
         }
     },
 
@@ -65,8 +72,8 @@ export const authController = {
     login: async (req, res) => {
         try {
             const { idToken, walletAddress } = req.body;
-            if (!idToken) return res.status(400).json({ message: 'idToken is required' });
-            if (!walletAddress) return res.status(400).json({ message: 'walletAddress is required' });
+            if (!idToken) return errorResponse(res, 'idToken is required', 400);
+            if (!walletAddress) return errorResponse(res, 'walletAddress is required', 400);
 
             const ticket = await googleClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
             const payload = ticket.getPayload();
@@ -74,21 +81,32 @@ export const authController = {
 
             // Find user by wallet or email
             const user = await User.findOne({ $or: [{ walletAddress: walletAddress.toLowerCase() }, { email }] });
-            if (!user) return res.status(404).json({ message: 'User not found. Please register first.' });
+            if (!user) return errorResponse(res, 'User not found. Please register first.', 404);
+
+            // Check if user is active
+            if (!user.isActive) return errorResponse(res, 'Account is deactivated', 403);
+            if (user.isBanned) return errorResponse(res, `Account is banned: ${user.banReason}`, 403);
 
             // Optionally ensure the email matches
             if (user.email !== email) {
-                // If email differs, reject to avoid account mismatch
-                return res.status(403).json({ message: 'Google account does not match user email' });
+                return errorResponse(res, 'Google account does not match user email', 403);
             }
 
-            const token = jwt.sign({ userId: user._id, walletAddress: user.walletAddress, role: user.role }, process.env.JWT_SECRET || 'dev_jwt_secret', { expiresIn: '7d' });
+            // Update last login
+            user.lastLogin = new Date();
+            await user.save();
+
+            const token = jwt.sign(
+                { userId: user._id, walletAddress: user.walletAddress, role: user.role }, 
+                process.env.JWT_SECRET || 'dev_jwt_secret', 
+                { expiresIn: '7d' }
+            );
 
             const safe = maskUser(user);
-            return res.json({ user: safe, token });
+            return successResponse(res, { user: safe, token }, MESSAGES.AUTH.LOGIN_SUCCESS);
         } catch (err) {
             console.error('Login error:', err);
-            return res.status(500).json({ message: 'Internal server error' });
+            return errorResponse(res, MESSAGES.GENERAL.SERVER_ERROR, 500);
         }
     }
 
