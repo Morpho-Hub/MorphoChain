@@ -163,19 +163,19 @@ const FarmForm: React.FC<FarmFormProps> = ({
 
   const handleSubmit = () => {
     if (validateStep2()) {
-      // Si es una nueva finca, mostrar encuesta ambiental
-      if (!farm && requireEnvironmentalSurvey) {
-        setShowEnvironmentalSurvey(true);
-      } else {
-        // Si es edición o no requiere encuesta, guardar directamente
-        saveFarm(null);
-      }
+      // Guardar directamente sin encuesta (puede llenarse después)
+      saveFarm(null);
     }
   };
 
   const handleEnvironmentalSurveyComplete = (metrics: EnvironmentalMetrics) => {
     setShowEnvironmentalSurvey(false);
     saveFarm(metrics);
+  };
+
+  const handleSkipSurvey = () => {
+    // Opción para omitir la encuesta y guardar sin datos ambientales
+    saveFarm(null);
   };
 
   const saveFarm = (metrics: EnvironmentalMetrics | null) => {
@@ -194,7 +194,9 @@ const FarmForm: React.FC<FarmFormProps> = ({
       },
       landSize: 10, // Default hectares - could be added to form
       cropType: products.length > 0 ? products[0].cropType : 'Cultivo General',
-      investmentGoal: products.length > 0 ? products[0].price * products[0].stock : 10000,
+      investmentGoal: products.length > 0 
+        ? Math.max(products[0].price * products[0].stock, 100) // Mínimo $100
+        : 10000,
       minInvestment: 100,
       expectedROI: 15, // Default 15%
       investmentDuration: 12, // 12 months

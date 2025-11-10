@@ -103,7 +103,9 @@ class FarmService {
   }
 
   async create(data: CreateFarmData): Promise<ApiResponse<Farm>> {
+    console.log('🌾 Creating farm with data:', data);
     const response = await api.post<Farm>('/farms', data);
+    console.log('🌾 Farm creation response:', response);
     if (response.success && response.data) {
       response.data.id = response.data._id || response.data.id;
     }

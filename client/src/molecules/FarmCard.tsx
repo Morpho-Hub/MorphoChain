@@ -122,14 +122,18 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onViewDetai
           {t.mainProducts}:
         </p>
         <div className="flex flex-wrap gap-2">
-          {farm.products.map((product, index) => (
-            <Chip
-              key={index}
-              label={product}
-              variant="warning"
-              size="sm"
-            />
-          ))}
+          {farm.products && farm.products.length > 0 ? (
+            farm.products.map((product, index) => (
+              <Chip
+                key={index}
+                label={product}
+                variant="warning"
+                size="sm"
+              />
+            ))
+          ) : (
+            <span className="text-sm text-gray-500">No hay productos registrados</span>
+          )}
         </div>
       </div>
 
@@ -137,13 +141,13 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm, onEdit, onDelete, onViewDetai
       <div className="flex items-center justify-between pt-4 border-t border-gray-200 text-sm">
         <div className="flex items-center gap-4">
           <span className="text-gray-600">
-            <strong className="text-black">{farm.productsCount}</strong> {t.products}
+            <strong className="text-black">{farm.productsCount || 0}</strong> {t.products}
           </span>
           <span className="text-gray-600">
-            <strong className="text-black">{farm.sustainability}%</strong> {t.sustainability}
+            <strong className="text-black">{farm.sustainability || 0}%</strong> {t.sustainability}
           </span>
           <span className="text-gray-600">
-            <strong className="text-black">{farm.practices}</strong> {t.practices}
+            <strong className="text-black">{farm.practices || 0}</strong> {t.practices}
           </span>
         </div>
       </div>

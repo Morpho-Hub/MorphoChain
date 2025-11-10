@@ -115,8 +115,15 @@ export const farmController = {
   createFarm: asyncHandler(async (req, res) => {
     const userId = req.userId;
 
+    console.log('🌾 CREATE FARM REQUEST:');
+    console.log('User ID:', userId);
+    console.log('User Role:', req.userRole);
+    console.log('User Wallet:', req.user?.walletAddress);
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+
     // Check if user is a farmer
     if (req.userRole !== 'farmer') {
+      console.log('❌ User is not a farmer, role:', req.userRole);
       return errorResponse(res, MESSAGES.ROLE.FARMER_ONLY, 403);
     }
 
@@ -127,15 +134,30 @@ export const farmController = {
       status: 'draft'
     };
 
-    const farm = new Farm(farmData);
-    await farm.save();
+    console.log('🌾 Farm Data to save:', JSON.stringify(farmData, null, 2));
 
-    // Update user's farmer data
-    await User.findByIdAndUpdate(userId, {
-      $inc: { 'farmerData.farmCount': 1 }
-    });
+    try {
+      const farm = new Farm(farmData);
+      await farm.save();
 
-    return successResponse(res, farm, MESSAGES.FARM.CREATED, 201);
+      console.log('✅ Farm created successfully:', farm._id);
+
+      // Update user's farmer data
+      await User.findByIdAndUpdate(userId, {
+        $inc: { 'farmerData.farmCount': 1 }
+      });
+
+      console.log('✅ User farmer data updated');
+
+      return successResponse(res, farm, MESSAGES.FARM.CREATED, 201);
+    } catch (error) {
+      console.error('❌ Error creating farm:', error);
+      console.error('Error details:', error.message);
+      if (error.errors) {
+        console.error('Validation errors:', JSON.stringify(error.errors, null, 2));
+      }
+      throw error;
+    }
   }),
 
   /**
