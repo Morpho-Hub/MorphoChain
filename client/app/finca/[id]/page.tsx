@@ -200,9 +200,32 @@ export default function FarmDetailPage() {
     }
   };
 
-  const handleDeleteProduct = (listingId: string) => {
+  const handleDeleteProduct = async (listingId: string) => {
     if (confirm(es.productListing.deleteConfirm)) {
-      setProductListings(productListings.filter(listing => listing.id !== listingId));
+      try {
+        console.log('🗑️ Deleting product:', listingId);
+        const response = await productService.deleteProduct(listingId);
+        
+        if (response.success) {
+          console.log('✅ Product deleted successfully');
+          setProductListings(productListings.filter(listing => listing.id !== listingId));
+          
+          // Update farm product count
+          if (farm) {
+            const updatedFarm = {
+              ...farm,
+              productsCount: Math.max(0, farm.productsCount - 1)
+            };
+            setFarm(updatedFarm);
+          }
+        } else {
+          console.error('❌ Failed to delete product:', response.error);
+          alert('Error al eliminar el producto');
+        }
+      } catch (error) {
+        console.error('❌ Error deleting product:', error);
+        alert('Error al eliminar el producto');
+      }
     }
   };
 
@@ -210,52 +233,118 @@ export default function FarmDetailPage() {
     setShowEditForm(true);
   };
 
-  const handleSaveFarm = async (farmData: Omit<Farm, 'id' | 'estimatedEarnings' | 'receivedEarnings' | 'productsCount'>) => {
-    setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (farm) {
-      const updatedFarm: Farm = {
-        ...farm,
-        ...farmData,
-      };
-      setFarm(updatedFarm);
-      mockFarms[farmId] = updatedFarm;
+  const handleSaveFarm = async (farmData: any) => {
+    try {
+      setIsSaving(true);
+      console.log('💾 Updating farm:', farmId, farmData);
+      
+      const response = await farmService.update(farmId, farmData);
+      
+      if (response.success && response.data) {
+        console.log('✅ Farm updated successfully');
+        // Reload farm data to get fresh data from backend
+        await loadFarmData();
+        setShowEditForm(false);
+      } else {
+        console.error('❌ Failed to update farm:', response.error);
+        alert('Error al actualizar la finca. Por favor intenta de nuevo.');
+      }
+    } catch (error) {
+      console.error('❌ Error updating farm:', error);
+      alert('Error al actualizar la finca. Por favor intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
     }
-    
-    setIsSaving(false);
-    setShowEditForm(false);
   };
 
   const handleDeleteFarm = () => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteFarm = () => {
-    // En producción, aquí haríamos una llamada a la API
-    delete mockFarms[farmId];
-    router.push('/panel-agricultor');
+  const confirmDeleteFarm = async () => {
+    try {
+      setIsSaving(true);
+      console.log('🗑️ Deleting farm:', farmId);
+      const response = await farmService.delete(farmId);
+      
+      if (response.success) {
+        console.log('✅ Farm deleted successfully');
+        router.push('/panel-agricultor');
+      } else {
+        console.error('❌ Failed to delete farm:', response.error);
+        alert('Error al eliminar la finca. Por favor intenta de nuevo.');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting farm:', error);
+      alert('Error al eliminar la finca. Por favor intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
-  const handleAddCertification = (cert: string) => {
+  const handleAddCertification = async (cert: string) => {
     if (cert.trim() && !certifications.includes(cert.trim())) {
       const newCerts = [...certifications, cert.trim()];
-      setCertifications(newCerts);
-      if (farm) {
-        const updatedFarm = { ...farm, certifications: newCerts };
-        setFarm(updatedFarm);
-        mockFarms[farmId] = updatedFarm;
+      
+      try {
+        console.log('📜 Adding certification:', cert);
+        // Update certifications on backend
+        const certObjects = newCerts.map(c => ({
+          name: c,
+          issuer: 'MorphoChain',
+          date: new Date().toISOString()
+        }));
+        
+        const response = await farmService.update(farmId, {
+          certifications: certObjects
+        });
+        
+        if (response.success) {
+          console.log('✅ Certification added successfully');
+          setCertifications(newCerts);
+          if (farm) {
+            setFarm({ ...farm, certifications: newCerts });
+          }
+        } else {
+          console.error('❌ Failed to add certification:', response.error);
+          alert('Error al agregar la certificación');
+        }
+      } catch (error) {
+        console.error('❌ Error adding certification:', error);
+        alert('Error al agregar la certificación');
       }
     }
   };
 
-  const handleDeleteCertification = (cert: string) => {
+  const handleDeleteCertification = async (cert: string) => {
     const newCerts = certifications.filter(c => c !== cert);
-    setCertifications(newCerts);
-    if (farm) {
-      const updatedFarm = { ...farm, certifications: newCerts };
-      setFarm(updatedFarm);
-      mockFarms[farmId] = updatedFarm;
+    
+    try {
+      console.log('🗑️ Deleting certification:', cert);
+      const certObjects = newCerts.map(c => ({
+        name: c,
+        issuer: 'MorphoChain',
+        date: new Date().toISOString()
+      }));
+      
+      const response = await farmService.update(farmId, {
+        certifications: certObjects
+      });
+      
+      if (response.success) {
+        console.log('✅ Certification deleted successfully');
+        setCertifications(newCerts);
+        if (farm) {
+          setFarm({ ...farm, certifications: newCerts });
+        }
+      } else {
+        console.error('❌ Failed to delete certification:', response.error);
+        alert('Error al eliminar la certificación');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting certification:', error);
+      alert('Error al eliminar la certificación');
     }
   };
 

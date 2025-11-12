@@ -17,6 +17,7 @@ export default function FarmerDashboardPage() {
   const [editingFarm, setEditingFarm] = useState<Farm | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [productsMap, setProductsMap] = useState<Record<string, number>>({});
+  const [startWithSurvey, setStartWithSurvey] = useState(false);
 
   // Cargar fincas del usuario
   useEffect(() => {
@@ -67,6 +68,12 @@ export default function FarmerDashboardPage() {
     const farmId = farm._id || farm.id;
     const count = productCount[farmId] || 0;
     console.log(`🌾 Normalizing farm ${farm.name} (${farmId}): ${count} products`);
+    console.log('📊 Farm data from backend:', {
+      impactMetrics: farm.impactMetrics,
+      verificationStatus: farm.verificationStatus,
+      tokenId: farm.tokenId,
+      status: farm.status
+    });
     return {
       id: farmId,
       name: farm.name,
@@ -82,25 +89,32 @@ export default function FarmerDashboardPage() {
       practices: farm.practices?.length || farm.certifications?.length || 0,
       images: farm.images?.map((img: any) => typeof img === 'string' ? img : img.url) || [],
       certifications: farm.certifications?.map((cert: any) => typeof cert === 'string' ? cert : cert.name) || [],
-      environmentalMetrics: farm.impactMetrics ? {
+      // Solo crear environmentalMetrics si la farm tiene impactMetrics CON DATOS REALES
+      // Backend siempre crea impactMetrics con valores en 0, así que verificamos si tiene datos reales
+      environmentalMetrics: (farm.impactMetrics && farm.tokenId) ? {
+        // Solo si está tokenizada (tiene datos ambientales completados)
         carbonReduction: farm.impactMetrics.co2Reduction || 0,
         waterSaved: farm.impactMetrics.waterUsageReduction || 0,
         soilHealth: farm.impactMetrics.soilHealth || 0,
         biodiversityIndex: farm.impactMetrics.biodiversityScore || 0,
-        verificationStatus: farm.verificationStatus || 'pending' as const,
+        verificationStatus: 'verified' as const,
         lastVerificationDate: farm.lastVerificationDate || new Date().toISOString(),
         nextVerificationDate: farm.nextVerificationDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-      } : undefined
+      } : undefined // Si NO tiene tokenId, significa que no completó la encuesta
     };
   };
 
   const handleAddFarm = () => {
     setEditingFarm(undefined);
+    setStartWithSurvey(false);
     setShowForm(true);
   };
 
   const handleEditFarm = (farm: Farm) => {
     setEditingFarm(farm);
+    // Si la farm no tiene environmentalMetrics (undefined), ir directo a la encuesta
+    const needsSurvey = !farm.environmentalMetrics;
+    setStartWithSurvey(needsSurvey);
     setShowForm(true);
   };
 
@@ -118,7 +132,34 @@ export default function FarmerDashboardPage() {
         const response = await farmService.update(editingFarm.id, farmData);
         console.log('✏️ Update response:', response);
         if (response.success && response.data) {
-          const normalizedUpdatedFarm = normalizeFarm(response.data);
+          let updatedFarm = response.data;
+          
+          // Si se agregaron datos de sostenibilidad Y no está tokenizada, tokenizar
+          if (farmData.sustainabilityData && !updatedFarm.tokenId) {
+            console.log('🌱 Tokenizing updated farm with sustainability data...');
+            try {
+              const tokenizeResponse = await farmService.tokenize(updatedFarm.id!, {
+                sustainabilityScore: farmData.sustainabilityData.sustainabilityScore || 0,
+                carbonScore: farmData.sustainabilityData.carbonScore || 0,
+                soilHealth: farmData.sustainabilityData.soilHealth || 0,
+                waterUsage: farmData.sustainabilityData.waterUsage || 0,
+                biodiversity: farmData.sustainabilityData.biodiversity || 0,
+              });
+
+              if (tokenizeResponse.success && tokenizeResponse.data) {
+                console.log('✅ Farm tokenized successfully:', tokenizeResponse.data);
+                updatedFarm = tokenizeResponse.data;
+              } else {
+                console.error('❌ Tokenization failed:', tokenizeResponse.error);
+              }
+            } catch (tokenError) {
+              console.error('❌ Tokenization error:', tokenError);
+            }
+          } else if (updatedFarm.tokenId) {
+            console.log('ℹ️  Farm already tokenized, skipping tokenization');
+          }
+          
+          const normalizedUpdatedFarm = normalizeFarm(updatedFarm);
           // @ts-ignore
           setFarms(farms.map(f => 
             f.id === editingFarm.id ? normalizedUpdatedFarm : f
@@ -201,6 +242,7 @@ export default function FarmerDashboardPage() {
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingFarm(undefined);
+    setStartWithSurvey(false);
   };
 
   const handleDeleteFarm = async (farmId: string) => {
@@ -255,7 +297,8 @@ export default function FarmerDashboardPage() {
           onSave={handleSaveFarm}
           onCancel={handleCancelForm}
           isSaving={isSaving}
-          requireEnvironmentalSurvey={!editingFarm} // Solo para nuevas fincas
+          requireEnvironmentalSurvey={!editingFarm || (editingFarm && !editingFarm.environmentalMetrics)} // Para nuevas fincas O fincas sin encuesta
+          startWithSurvey={startWithSurvey} // Ir directo a la encuesta si es necesario
         />
       )}
     </>

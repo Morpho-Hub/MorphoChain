@@ -146,7 +146,9 @@ class FarmService {
     description?: string;
     category?: string;
   }): Promise<ApiResponse<any>> {
-    return api.post(`/products`, {
+    console.log('📦 Creating product for farm:', farmId, productData);
+    
+    const payload = {
       name: productData.name,
       description: productData.description || `Producto orgánico de ${productData.name}`,
       category: productData.category || 'other',
@@ -154,10 +156,16 @@ class FarmService {
       stock: productData.stock,
       unit: productData.unit,
       farm: farmId,
-      status: 'active',
+      status: 'active', // Backend uses 'active' not 'available'
       isOrganic: true,
       isFairTrade: true
-    });
+    };
+    
+    console.log('📤 Product payload:', payload);
+    const response = await api.post(`/products`, payload);
+    console.log('✅ Product created:', response);
+    
+    return response;
   }
 }
 

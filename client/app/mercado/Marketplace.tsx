@@ -70,9 +70,10 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                 farmer: farmOwner,
                 image: farm.images?.[0] || '/default-farm.jpg',
                 status: farm.status === 'active' ? 'Activo' : 'Inactivo',
-                practices: farm.practices || [],
+                category: farm.cropType || 'other',
+                practices: farm.certifications?.map((c: any) => c.name || c) || [],
                 products: (productsResponse.success && productsResponse.data) 
-                  ? productsResponse.data.filter(p => p.status === 'available').map(p => ({
+                  ? productsResponse.data.filter(p => p.status === 'active' && p.stock > 0).map(p => ({
                       ...p,
                       price: `$${p.price}`,
                     }))
@@ -211,8 +212,12 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-12">
-            <Text className="text-xl text-gray-600">Cargando fincas...</Text>
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#26ade4] mb-4"></div>
+            <Text className="text-xl text-gray-600">Cargando productos del mercado...</Text>
+            <Text variant="caption" className="text-gray-500 mt-2">
+              Buscando fincas con productos disponibles
+            </Text>
           </div>
         )}
 
@@ -295,8 +300,22 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
 
         {/* No Results */}
         {!loading && assets.length === 0 && (
-          <div className="text-center py-12">
-            <Text className="text-xl text-gray-600">No se encontraron fincas con productos disponibles</Text>
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="bg-gray-100 rounded-full p-6 mb-4">
+              <ShoppingBag className="w-16 h-16 text-gray-400" />
+            </div>
+            <Text className="text-2xl font-semibold text-gray-800 mb-2">
+              No hay productos disponibles
+            </Text>
+            <Text className="text-gray-600 text-center max-w-md mb-6">
+              Actualmente no hay fincas con productos listos para la venta. ¡Vuelve pronto para ver nuevas ofertas!
+            </Text>
+            <Button
+              title="Ver todas las fincas"
+              variant="primary"
+              onClick={() => onNavigate('inversion')}
+              className="rounded-xl"
+            />
           </div>
         )}        {/* Load More */}
         <div className="text-center pt-8">

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Upload, Check } from 'lucide-react';
+import { X, Plus, Upload, Check, Leaf } from 'lucide-react';
 import { Input } from '@/src/atoms';
 import { es } from '@/locales';
 import type { Farm } from '@/src/molecules/FarmCard';
@@ -28,6 +28,7 @@ interface FarmFormProps {
   onCancel: () => void;
   isSaving?: boolean;
   requireEnvironmentalSurvey?: boolean; // Solo para nuevas fincas
+  startWithSurvey?: boolean; // Ir directo a la encuesta (para farms pendientes)
 }
 
 interface FormErrors {
@@ -45,10 +46,12 @@ const FarmForm: React.FC<FarmFormProps> = ({
   onCancel,
   isSaving = false,
   requireEnvironmentalSurvey = false,
+  startWithSurvey = false,
 }) => {
   const t = es.farmForm;
   const [currentStep, setCurrentStep] = useState(1);
-  const [showEnvironmentalSurvey, setShowEnvironmentalSurvey] = useState(false);
+  const [showEnvironmentalSurvey, setShowEnvironmentalSurvey] = useState(startWithSurvey);
+  const [showSurveyExplanation, setShowSurveyExplanation] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Paso 1: Información básica
@@ -199,8 +202,16 @@ const FarmForm: React.FC<FarmFormProps> = ({
 
   const handleSubmit = () => {
     if (validateStep2()) {
-      // Guardar directamente sin encuesta (puede llenarse después)
-      saveFarm(null);
+      // Si es edición y no tiene métricas ambientales, mostrar encuesta
+      if (farm && !farm.environmentalMetrics && requireEnvironmentalSurvey) {
+        setShowSurveyExplanation(true); // Mostrar explicación primero
+      } else if (!requireEnvironmentalSurvey || farm) {
+        // Si no se requiere encuesta o ya tiene métricas, guardar directamente
+        saveFarm(null);
+      } else {
+        // Nueva finca que requiere encuesta - mostrar explicación
+        setShowSurveyExplanation(true);
+      }
     }
   };
 
@@ -612,6 +623,102 @@ const FarmForm: React.FC<FarmFormProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Survey Explanation Modal */}
+      {showSurveyExplanation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Leaf className="w-10 h-10 text-green-600" />
+                </div>
+                <h2 className="text-3xl font-bold text-black mb-2">
+                  Encuesta Ambiental
+                </h2>
+                <p className="text-gray-600">
+                  Potencia tu finca con certificación ambiental
+                </p>
+              </div>
+
+              {/* Benefits */}
+              <div className="space-y-4 mb-8">
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                  <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <span className="text-2xl">🪙</span>
+                    Tokenización de tu Finca
+                  </h3>
+                  <p className="text-blue-800 text-sm">
+                    Convierte tu finca en un activo digital en blockchain y genera ingresos pasivos a través de inversores.
+                  </p>
+                </div>
+
+                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                  <h3 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                    <span className="text-2xl">💰</span>
+                    Acceso a Inversión
+                  </h3>
+                  <p className="text-green-800 text-sm">
+                    Atrae inversores interesados en agricultura sostenible y recibe financiamiento para tu proyecto.
+                  </p>
+                </div>
+
+                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                  <h3 className="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
+                    <span className="text-2xl">✅</span>
+                    Certificación Verificable
+                  </h3>
+                  <p className="text-yellow-800 text-sm">
+                    Obtén una certificación ambiental transparente y verificable que aumenta la confianza de tus compradores.
+                  </p>
+                </div>
+
+                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
+                  <h3 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                    <span className="text-2xl">🌍</span>
+                    Impacto Medible
+                  </h3>
+                  <p className="text-purple-800 text-sm">
+                    Mide y comparte tu impacto ambiental: reducción de CO₂, ahorro de agua, y biodiversidad.
+                  </p>
+                </div>
+              </div>
+
+              {/* Info Note */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-700">
+                  <strong>Nota:</strong> La encuesta toma aproximadamente 5-10 minutos. Puedes llenarla ahora o completarla más tarde desde tu panel de agricultor.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowSurveyExplanation(false);
+                    setShowEnvironmentalSurvey(true);
+                  }}
+                  className="flex-1 gradient-green text-black rounded-lg px-6 py-4 font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                >
+                  <Check className="w-5 h-5" />
+                  Llenar ahora
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowSurveyExplanation(false);
+                    saveFarm(null);
+                  }}
+                  className="flex-1 border-2 border-gray-300 rounded-lg px-6 py-4 font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  Llenar después
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Environmental Survey Modal */}
       {showEnvironmentalSurvey && (

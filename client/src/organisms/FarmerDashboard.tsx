@@ -138,9 +138,9 @@ const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {farms.map((farm) => (
+              {farms.map((farm, index) => (
                 <FarmCard
-                  key={farm.id}
+                  key={farm.id || `farm-${index}`}
                   farm={farm}
                   onEdit={onEditFarm}
                   onDelete={onDeleteFarm}
