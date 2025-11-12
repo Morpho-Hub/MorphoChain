@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Filter, DollarSign, Sprout, Wind, Leaf } from "lucide-react";
 import Heading from "@/src/atoms/Heading";
 import Text from "@/src/atoms/Text";
@@ -16,98 +16,173 @@ import { SustainabilityCertificate } from "@/src/organisms";
 import { es } from "@/locales";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { farmService, investmentService, transactionService } from "@/src/services";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface FarmForInvestment {
+  _id: string;
+  id: string;
+  name: string;
+  farmer: string;
+  location: string;
+  category: string;
+  image: string;
+  tokenPrice: string;
+  tokenPriceNumber: number;
+  roi: string;
+  available: number;
+  totalTokens: number;
+  status: string;
+  soilHealth: number;
+  carbonScore: number;
+  vegetationIndex: number;
+}
+
+interface CertificateData {
+  companyName: string;
+  tokensPurchased: number;
+  totalAmount: string;
+  carbonOffset: string;
+  waterSaved: string;
+  treesPlanted: number;
+  purchaseDate: string;
+  certificateId: string;
+}
+
+interface FarmOwner {
+  _id: string;
+  name: string;
+  email: string;
+}
 
 export default function InversionPage() {
+  const { user } = useAuth();
+  console.log('User:', user); // To avoid unused variable warning
   const [activeTab, setActiveTab] = useState<"direct" | "corporate">("direct");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("roi");
   const [showInvestModal, setShowInvestModal] = useState(false);
-  const [selectedFarm, setSelectedFarm] = useState<any>(null);
+  const [selectedFarm, setSelectedFarm] = useState<FarmForInvestment | null>(null);
   const [tokenQuantity, setTokenQuantity] = useState("");
   const [bulkAmount, setBulkAmount] = useState("");
   const [showCertificate, setShowCertificate] = useState(false);
-  const [certificateData, setCertificateData] = useState<any>(null);
+  const [certificateData, setCertificateData] = useState<CertificateData | null>(null);
+  const [tokenFarms, setTokenFarms] = useState<FarmForInvestment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const t = es.investment;
 
-  // Mock data for tokenized farms
-  const tokenFarms = [
-    {
-      id: 1,
-      name: "Finca Café Orgánico El Paraíso",
-      farmer: "Carlos Rodríguez",
-      location: "Tarrazú, Costa Rica",
-      category: "café",
-      image: "/images/coffee-farm.jpg",
-      tokenPrice: "$10",
-      roi: "18% anual",
-      available: 450,
-      totalTokens: 1000,
-      status: "Popular",
-      soilHealth: 92,
-      carbonScore: 88,
-      vegetationIndex: 95,
-    },
-    {
-      id: 2,
-      name: "Plantación Cacao Fino Orgánico",
-      farmer: "María González",
-      location: "Limón, Costa Rica",
-      category: "cacao",
-      image: "/images/cacao-farm.jpg",
-      tokenPrice: "$15",
-      roi: "22% anual",
-      available: 320,
-      totalTokens: 800,
-      status: "Destacado",
-      soilHealth: 89,
-      carbonScore: 91,
-      vegetationIndex: 93,
-    },
-    {
-      id: 3,
-      name: "Finca Banano Regenerativo",
-      farmer: "José Mora",
-      location: "Guápiles, Costa Rica",
-      category: "banano",
-      image: "/images/banana-farm.jpg",
-      tokenPrice: "$8",
-      roi: "15% anual",
-      available: 580,
-      totalTokens: 1200,
-      status: "Popular",
-      soilHealth: 85,
-      carbonScore: 82,
-      vegetationIndex: 88,
-    },
-    {
-      id: 4,
-      name: "Piña Golden Sostenible",
-      farmer: "Ana Jiménez",
-      location: "San Carlos, Costa Rica",
-      category: "piña",
-      image: "/images/pineapple-farm.jpg",
-      tokenPrice: "$12",
-      roi: "20% anual",
-      available: 200,
-      totalTokens: 600,
-      status: "Destacado",
-      soilHealth: 90,
-      carbonScore: 87,
-      vegetationIndex: 91,
-    },
-  ];
+  // Load farms from backend
+  useEffect(() => {
+    loadFarmsForInvestment();
+  }, []);
 
-  const handleTokenInvest = (farm: any) => {
+  const loadFarmsForInvestment = async () => {
+    try {
+      setLoading(true);
+      const response = await farmService.getAll({ status: 'active' });
+      
+      if (response.success && response.data) {
+        // Convert farms to investment format
+        const farmsData: FarmForInvestment[] = response.data.map((farm) => {
+          const tokenPrice = 10; // Default token price $10
+          const totalTokens = Math.floor(farm.size * 100); // 100 tokens per hectare
+          const soldTokens = Math.floor(totalTokens * Math.random() * 0.3); // Mock sold tokens (0-30%)
+          const availableTokens = totalTokens - soldTokens;
+          
+          // Get owner name
+          const farmerName = typeof farm.owner === 'object' && farm.owner !== null
+            ? (farm.owner as FarmOwner).name || 'Agricultor'
+            : 'Agricultor';
+
+          // Format location string
+          const locationStr = typeof farm.location === 'string' 
+            ? farm.location 
+            : (() => {
+                const loc = farm.location as { city?: string; region?: string; country?: string; address?: string };
+                return `${loc.city || ''}, ${loc.region || ''}, ${loc.country || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',');
+              })();
+
+          return {
+            _id: farm._id,
+            id: farm._id,
+            name: farm.name,
+            farmer: farmerName,
+            location: locationStr,
+            category: farm.category,
+            image: farm.images?.[0] || '/images/farm-default.jpg',
+            tokenPrice: `$${tokenPrice}`,
+            tokenPriceNumber: tokenPrice,
+            roi: "15-20% anual",
+            available: availableTokens,
+            totalTokens: totalTokens,
+            status: availableTokens > totalTokens * 0.5 ? "Disponible" : "Popular",
+            soilHealth: farm.impactMetrics?.soilHealth || 85,
+            carbonScore: farm.impactMetrics?.carbonScore || 80,
+            vegetationIndex: farm.impactMetrics?.vegetationIndex || 88,
+          };
+        });
+
+        setTokenFarms(farmsData);
+      }
+    } catch (error) {
+      console.error('Error loading farms:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTokenInvest = (farm: FarmForInvestment) => {
     setSelectedFarm(farm);
     setShowInvestModal(true);
   };
 
-  const handleConfirmTokenInvestment = () => {
-    console.log("Token Investment:", { farm: selectedFarm, tokens: tokenQuantity });
-    setShowInvestModal(false);
-    setTokenQuantity("");
+  const handleConfirmTokenInvestment = async () => {
+    if (!selectedFarm || !tokenQuantity) return;
+
+    try {
+      const tokens = parseFloat(tokenQuantity);
+      const amount = tokens * selectedFarm.tokenPriceNumber;
+
+      // Create investment
+      const investmentResponse = await investmentService.createInvestment({
+        farm: selectedFarm._id,
+        amount,
+        tokensAmount: tokens,
+      });
+
+      if (!investmentResponse.success) {
+        throw new Error('Error al crear la inversión');
+      }
+
+      // Create transaction record
+      await transactionService.createTransaction({
+        type: 'investment',
+        amount,
+        to: selectedFarm._id,
+        relatedFarm: selectedFarm._id,
+        paymentMethod: 'wallet',
+        metadata: {
+          quantity: tokens,
+          unitPrice: selectedFarm.tokenPriceNumber,
+          farmName: selectedFarm.name,
+          description: `Compra de ${tokens} tokens de ${selectedFarm.name}`,
+        },
+      });
+
+      alert(`¡Inversión exitosa! Has comprado ${tokens} tokens de ${selectedFarm.name}`);
+      
+      // Reload farms to update availability
+      loadFarmsForInvestment();
+      
+      setShowInvestModal(false);
+      setTokenQuantity("");
+      setSelectedFarm(null);
+    } catch (error) {
+      console.error('Error creating investment:', error);
+      alert('Error al procesar la inversión. Por favor intenta de nuevo.');
+    }
   };
 
   const handleBulkPurchase = () => {
@@ -115,8 +190,6 @@ export default function InversionPage() {
     const totalAmount = tokens * 5; // $5 por token
     const carbonOffset = (tokens * 0.05).toFixed(1); // 50kg = 0.05 ton por token
     const waterSaved = (tokens * 1000).toLocaleString(); // 1000L por token
-    const hectareasRegeneradas = (tokens * 0.1).toFixed(1); // 0.1 ha por token
-    const biodiversidadIndex = (tokens * 5).toFixed(0); // 5 puntos por token
 
     const certData = {
       companyName: "Mi Empresa S.A.",
@@ -252,7 +325,18 @@ export default function InversionPage() {
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              <div className="text-center py-12">
+                <Text className="text-lg text-[#000000]/60">Cargando fincas disponibles...</Text>
+              </div>
+            ) : filteredAndSortedFarms.length === 0 ? (
+              <Card className="p-12 text-center rounded-2xl border-2 border-[#d1e751]/30">
+                <Text className="text-lg text-[#000000]/60">
+                  No se encontraron fincas disponibles para inversión.
+                </Text>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAndSortedFarms.map((farm) => (
                 <Card
                   key={farm.id}
@@ -341,7 +425,8 @@ export default function InversionPage() {
                   </div>
                 </Card>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -653,15 +738,18 @@ export default function InversionPage() {
                 certificateId={certificateData.certificateId}
                 labels={{
                   title: "Certificado de Sostenibilidad",
-                  companyName: "Empresa",
-                  tokensPurchased: "Tokens Adquiridos",
-                  totalAmount: "Monto Total",
+                  subtitle: "MorphoChain Regenerative Platform",
+                  certifies: "Certifica que",
+                  purchased: "ha adquirido",
+                  amount: "Monto total",
+                  environmentalImpact: "Impacto Ambiental",
                   carbonOffset: "Captura de CO₂",
-                  waterSaved: "Agua Ahorrada",
+                  waterConserved: "Agua Ahorrada",
                   treesPlanted: "Árboles Plantados",
-                  purchaseDate: "Fecha de Compra",
-                  certificateId: "ID del Certificado",
+                  issuedOn: "Emitido el",
+                  certificateNumber: "Certificado N°",
                   signature: "Firma Autorizada",
+                  signatureName: "Director de Sostenibilidad",
                 }}
               />
               <Button
