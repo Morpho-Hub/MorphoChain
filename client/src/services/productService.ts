@@ -19,10 +19,16 @@ export interface Product {
   stock: number;
   description?: string;
   images?: string[];
-  status: 'available' | 'out_of_stock' | 'discontinued';
+  status: 'draft' | 'active' | 'out-of-stock' | 'discontinued' | 'pending';
   certifications?: string[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ProductImage {
+  url: string;
+  caption?: string;
+  isPrimary?: boolean;
 }
 
 export interface CreateProductData {
@@ -33,11 +39,13 @@ export interface CreateProductData {
   unit: string;
   stock: number;
   description?: string;
+  images?: ProductImage[];
   certifications?: string[];
 }
 
 export interface UpdateProductData extends Partial<CreateProductData> {
-  status?: 'available' | 'out_of_stock' | 'discontinued';
+  status?: 'draft' | 'active' | 'out-of-stock' | 'discontinued' | 'pending';
+  images?: ProductImage[];
 }
 
 class ProductService {

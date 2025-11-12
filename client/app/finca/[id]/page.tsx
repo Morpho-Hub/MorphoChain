@@ -39,6 +39,7 @@ export default function FarmDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'metrics' | 'salesHistory'>('overview');
   const [productListings, setProductListings] = useState<ProductListing[]>([]);
   const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductListing | undefined>(undefined);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showVerificationAlert, setShowVerificationAlert] = useState(true);
@@ -101,7 +102,13 @@ export default function FarmDetailPage() {
             price: product.price,
             unit: product.unit,
             stock: product.stock,
-            status: product.status || 'draft'
+            status: product.status || 'draft',
+            description: product.description,
+            category: product.category,
+            // Extract URLs from image objects
+            images: Array.isArray(product.images) 
+              ? product.images.map((img: any) => typeof img === 'string' ? img : img.url)
+              : []
           }));
           console.log('📦 Product listings:', listings);
           setProductListings(listings);
@@ -164,33 +171,90 @@ export default function FarmDetailPage() {
     try {
       setIsSaving(true);
       
-      // Guardar producto en la base de datos
-      const response = await farmService.createProduct(farmId, {
-        name: listingData.name,
-        stock: listingData.stock,
-        price: listingData.price,
-        unit: listingData.unit,
-        category: 'other'
-      });
+      // Convert base64 image strings to the format backend expects
+      const formattedImages = (listingData.images || []).map((imageUrl, index) => ({
+        url: imageUrl,
+        caption: '',
+        isPrimary: index === 0 // First image is primary
+      }));
       
-      if (response.success && response.data) {
-        // Agregar el producto a la lista
-        const newListing: ProductListing = {
-          id: response.data._id || response.data.id,
-          name: response.data.name,
-          price: response.data.price,
-          unit: response.data.unit,
-          stock: response.data.stock,
-          status: response.data.status || 'active'
-        };
+      if (editingProduct) {
+        // Editar producto existente
+        console.log('✏️ Editing product:', editingProduct.id);
+        const response = await productService.updateProduct(editingProduct.id, {
+          name: listingData.name,
+          stock: listingData.stock,
+          price: listingData.price,
+          unit: listingData.unit,
+          status: listingData.status,
+          description: listingData.description,
+          category: listingData.category,
+          images: formattedImages as any
+        });
         
-        setProductListings([...productListings, newListing]);
-        setShowProductForm(false);
-        
-        // Recargar los datos de la finca
-        loadFarmData();
+        if (response.success && response.data) {
+          console.log('✅ Product updated successfully');
+          const updatedListing: ProductListing = {
+            id: response.data._id || response.data.id,
+            name: response.data.name,
+            price: response.data.price,
+            unit: response.data.unit,
+            stock: response.data.stock,
+            status: response.data.status || 'active',
+            description: response.data.description,
+            category: response.data.category,
+            // Extract URLs from image objects
+            images: Array.isArray(response.data.images)
+              ? response.data.images.map((img: any) => typeof img === 'string' ? img : img.url)
+              : []
+          };
+          
+          setProductListings(productListings.map(p => 
+            p.id === editingProduct.id ? updatedListing : p
+          ));
+          setShowProductForm(false);
+          setEditingProduct(undefined);
+        } else {
+          alert('Error al actualizar el producto: ' + (response.error || 'Error desconocido'));
+        }
       } else {
-        alert('Error al crear el producto: ' + (response.error || 'Error desconocido'));
+        // Crear nuevo producto
+        console.log('➕ Creating new product');
+        const response = await farmService.createProduct(farmId, {
+          name: listingData.name,
+          stock: listingData.stock,
+          price: listingData.price,
+          unit: listingData.unit,
+          category: listingData.category || 'other',
+          description: listingData.description,
+          images: listingData.images // farmService will format these
+        });
+        
+        if (response.success && response.data) {
+          console.log('✅ Product created successfully');
+          const newListing: ProductListing = {
+            id: response.data._id || response.data.id,
+            name: response.data.name,
+            price: response.data.price,
+            unit: response.data.unit,
+            stock: response.data.stock,
+            status: response.data.status || 'active',
+            description: response.data.description,
+            category: response.data.category,
+            // Extract URLs from image objects
+            images: Array.isArray(response.data.images)
+              ? response.data.images.map((img: any) => typeof img === 'string' ? img : img.url)
+              : []
+          };
+          
+          setProductListings([...productListings, newListing]);
+          setShowProductForm(false);
+          
+          // Recargar los datos de la finca
+          await loadFarmData();
+        } else {
+          alert('Error al crear el producto: ' + (response.error || 'Error desconocido'));
+        }
       }
     } catch (error) {
       console.error('Error saving product:', error);
@@ -198,6 +262,11 @@ export default function FarmDetailPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleEditProduct = (listing: ProductListing) => {
+    setEditingProduct(listing);
+    setShowProductForm(true);
   };
 
   const handleDeleteProduct = async (listingId: string) => {
@@ -658,6 +727,7 @@ export default function FarmDetailPage() {
                   <ProductListingCard
                     key={listing.id}
                     listing={listing}
+                    onEdit={handleEditProduct}
                     onDelete={handleDeleteProduct}
                   />
                 ))}
@@ -842,8 +912,12 @@ export default function FarmDetailPage() {
         <ProductListingForm
           farmId={farm.id}
           farmName={farm.name}
+          listing={editingProduct}
           onSave={handleSaveProduct}
-          onCancel={() => setShowProductForm(false)}
+          onCancel={() => {
+            setShowProductForm(false);
+            setEditingProduct(undefined);
+          }}
           isSaving={isSaving}
         />
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, X, ShoppingBag, Leaf } from "lucide-react";
+import { Filter, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -17,35 +17,48 @@ import { SearchBar, Modal } from "@/src/molecules";
 import { ReceiptModal } from "@/src/organisms";
 import type { ReceiptData } from "@/src/organisms/Receipt";
 import { es } from "@/locales";
-import { farmService, productService, Farm, Product } from "@/src/services";
+import { farmService, productService, transactionService, Product } from "@/src/services";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MarketplaceProps {
   onNavigate: (page: string) => void;
 }
 
-interface FarmWithProducts extends Farm {
-  products: Product[];
-  farmer: string;
-  practices: string[];
+interface ProductWithFarmInfo extends Product {
+  priceDisplay: string;
+  farmName: string;
+  farmLocation: string;
+  farmImage: string;
+  farmerName: string;
+  farmId: string;
+  productImage: string;
 }
 
 export function Marketplace({ onNavigate }: MarketplaceProps) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRegion, setSelectedRegion] = useState("all");
-  const [selectedAsset, setSelectedAsset] = useState<FarmWithProducts | null>(null);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [productQuantity, setProductQuantity] = useState<{ [key: string]: number }>({});
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithFarmInfo | null>(null);
+  const [productQuantity, setProductQuantity] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const [assets, setAssets] = useState<FarmWithProducts[]>([]);
+  const [products, setProducts] = useState<ProductWithFarmInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   const t = es.marketplace;
 
-  // Load farms and products from backend
+  // Helper function to format location
+  const formatLocation = (location: any): string => {
+    if (typeof location === 'string') return location;
+    if (typeof location === 'object' && location !== null) {
+      const parts = [location.city, location.region, location.country].filter(Boolean);
+      return parts.join(', ') || 'Ubicación no especificada';
+    }
+    return 'Ubicación no especificada';
+  };
+
+  // Load products from backend
   useEffect(() => {
     const loadMarketplaceData = async () => {
       try {
@@ -55,35 +68,47 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
         const farmsResponse = await farmService.getAll({ status: 'active' });
         
         if (farmsResponse.success && farmsResponse.data) {
-          // Load products for each farm
-          const farmsWithProducts = await Promise.all(
-            farmsResponse.data.map(async (farm) => {
-              const productsResponse = await productService.getByFarm(farm._id || farm.id);
-              
-              const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
-                ? (farm.owner as any).name 
-                : 'Agricultor';
-              
-              return {
-                ...farm,
-                id: farm._id || farm.id,
-                farmer: farmOwner,
-                image: farm.images?.[0] || '/default-farm.jpg',
-                status: farm.status === 'active' ? 'Activo' : 'Inactivo',
-                category: farm.cropType || 'other',
-                practices: farm.certifications?.map((c: any) => c.name || c) || [],
-                products: (productsResponse.success && productsResponse.data) 
-                  ? productsResponse.data.filter(p => p.status === 'active' && p.stock > 0).map(p => ({
-                      ...p,
-                      price: `$${p.price}`,
-                    }))
-                  : [],
-              };
-            })
-          );
+          // Load products for each farm and flatten into single array
+          const allProductsPromises = farmsResponse.data.map(async (farm) => {
+            const farmId = farm._id || '';
+            if (!farmId) return [];
+
+            const productsResponse = await productService.getByFarm(farmId);
+            
+            if (!productsResponse.success || !productsResponse.data) return [];
+
+            const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
+              ? (farm.owner as { _id: string; name: string }).name || 'Agricultor'
+              : 'Agricultor';
+
+            // Transform each product to include farm info
+            return productsResponse.data
+              .filter(p => p.status === 'active' && p.stock > 0)
+              .map(p => {
+                // Extract first image URL (handle both string and object formats)
+                let productImage = '/default-product.jpg';
+                if (p.images && p.images.length > 0) {
+                  const firstImg = p.images[0];
+                  productImage = typeof firstImg === 'string' ? firstImg : (firstImg as any).url || '/default-product.jpg';
+                }
+                
+                return {
+                  ...p,
+                  priceDisplay: `$${p.price}`,
+                  farmName: farm.name,
+                  farmLocation: formatLocation(farm.location),
+                  farmImage: farm.images?.[0] || '/default-farm.jpg',
+                  farmerName: farmOwner,
+                  farmId: farmId,
+                  productImage, // Add processed product image
+                };
+              });
+          });
+
+          const productsArrays = await Promise.all(allProductsPromises);
+          const flatProducts = productsArrays.flat();
           
-          // Filter farms that have products
-          setAssets(farmsWithProducts.filter(f => f.products.length > 0));
+          setProducts(flatProducts);
         }
       } catch (error) {
         console.error('Error loading marketplace data:', error);
@@ -113,56 +138,111 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
   ];
 
   const handleBuyProduct = async () => {
-    if (!selectedAsset) return;
+    if (!selectedProduct || productQuantity < 1) return;
 
-    // Calculate purchase details
-    const purchasedProducts = selectedAsset.products
-      .filter(product => productQuantity[product.name] > 0)
-      .map(product => ({
-        name: product.name,
-        quantity: productQuantity[product.name],
-        unitPrice: parseFloat(product.price.replace('$', '')),
-        unit: product.unit,
-      }));
+    try {
+      const quantity = productQuantity;
+      const unitPrice = selectedProduct.price;
+      const subtotal = quantity * unitPrice;
+      const regenerativeRewardPercentage = 0.05; // 5% fee
+      const regenerativeReward = subtotal * regenerativeRewardPercentage;
+      const total = subtotal + regenerativeReward;
 
-    if (purchasedProducts.length === 0) return;
+      const purchasedProducts = [{
+        productId: selectedProduct._id,
+        name: selectedProduct.name,
+        quantity,
+        unitPrice,
+        unit: selectedProduct.unit,
+        total: subtotal,
+      }];
 
-    const subtotal = purchasedProducts.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0
-    );
-    const regenerativeRewardPercentage = 0.05; // 5% por defecto
-    const regenerativeReward = subtotal * regenerativeRewardPercentage;
-    const total = subtotal + regenerativeReward;
+      // Get farm owner ID
+      const farmOwnerId = typeof selectedProduct.farm === 'object' && selectedProduct.farm !== null
+        ? (selectedProduct.farm as any).owner?._id || (selectedProduct.farm as any).owner
+        : selectedProduct.farm;
 
-    // Generate receipt data
-    const receipt: ReceiptData = {
-      orderNumber: `MCH-${Date.now().toString().slice(-8)}`,
-      date: new Date().toISOString(),
-      buyerName: user ? `${user.firstName} ${user.lastName}` : "Usuario Inversor",
-      buyerEmail: user?.email || "usuario@example.com",
-      sellerName: selectedAsset.farmer,
-      farmName: selectedAsset.name,
-      farmLocation: selectedAsset.location,
-      products: purchasedProducts,
-      subtotal,
-      regenerativeReward,
-      total,
-      status: "paid",
-    };
+      // Create transaction in backend
+      const transactionResponse = await transactionService.createTransaction({
+        type: 'product-purchase',
+        amount: total,
+        to: farmOwnerId, // Farmer receives payment
+        relatedFarm: selectedProduct.farmId,
+        paymentMethod: 'wallet',
+        metadata: {
+          orderId: `MCH-${Date.now().toString().slice(-8)}`,
+          farmName: selectedProduct.farmName,
+          products: purchasedProducts,
+        },
+      });
 
-    setReceiptData(receipt);
-    setShowProductForm(false);
-    setProductQuantity({});
-    setShowReceipt(true);
-    
-    // TODO: Save purchase transaction to backend
-    // await transactionService.createTransaction({
-    //   type: 'purchase',
-    //   amount: total,
-    //   relatedEntity: { type: 'farm', id: selectedAsset._id },
-    //   metadata: { products: purchasedProducts }
-    // });
+      if (!transactionResponse.success) {
+        throw new Error('Error al crear la transacción');
+      }
+
+      // Update stock
+      await productService.updateStock(selectedProduct._id, quantity);
+
+      // Generate receipt data
+      const receipt: ReceiptData = {
+        orderNumber: transactionResponse.data?.metadata?.orderId || `MCH-${Date.now().toString().slice(-8)}`,
+        date: new Date().toISOString(),
+        buyerName: user ? `${user.firstName} ${user.lastName}` : "Usuario Comprador",
+        buyerEmail: user?.email || "usuario@example.com",
+        sellerName: selectedProduct.farmerName,
+        farmName: selectedProduct.farmName,
+        farmLocation: selectedProduct.farmLocation,
+        products: purchasedProducts,
+        subtotal,
+        regenerativeReward,
+        total,
+        status: "paid",
+      };
+
+      // Show receipt
+      setReceiptData(receipt);
+      setProductQuantity(1);
+      setSelectedProduct(null);
+      setShowReceipt(true);
+
+      // Reload marketplace data to reflect updated stock
+      const farmsResponse = await farmService.getAll({ status: 'active' });
+      if (farmsResponse.success && farmsResponse.data) {
+        const allProductsPromises = farmsResponse.data.map(async (farm) => {
+          const farmId = farm._id || '';
+          if (!farmId) return [];
+
+          const productsResponse = await productService.getByFarm(farmId);
+          
+          if (!productsResponse.success || !productsResponse.data) return [];
+
+          const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
+            ? (farm.owner as { _id: string; name: string }).name || 'Agricultor'
+            : 'Agricultor';
+
+          return productsResponse.data
+            .filter(p => p.status === 'active' && p.stock > 0)
+            .map(p => ({
+              ...p,
+              priceDisplay: `$${p.price}`,
+              farmName: farm.name,
+              farmLocation: formatLocation(farm.location),
+              farmImage: farm.images?.[0] || '/default-farm.jpg',
+              farmerName: farmOwner,
+              farmId: farmId,
+            }));
+        });
+
+        const productsArrays = await Promise.all(allProductsPromises);
+        const flatProducts = productsArrays.flat();
+        
+        setProducts(flatProducts);
+      }
+
+    } catch (error) {
+      console.error('Error al procesar la compra:', error);
+      alert('Hubo un error al procesar tu compra. Por favor intenta nuevamente.');
+    }
   };
 
   return (
@@ -221,77 +301,95 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
           </div>
         )}
 
-        {/* Assets Grid */}
+        {/* Products Grid */}
         {!loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assets
-            .filter((asset) => {
+            {products
+            .filter((product) => {
+              const locationStr = product.farmLocation.toLowerCase();
+              
               const matchesSearch = searchQuery === "" ||
-                asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                asset.farmer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                asset.location.toLowerCase().includes(searchQuery.toLowerCase());
+                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.farmName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.farmerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                locationStr.includes(searchQuery.toLowerCase());
               
               const matchesCategory = selectedCategory === "all" ||
-                asset.category.toLowerCase() === selectedCategory.toLowerCase() ||
-                (selectedCategory === "coffee" && asset.category.toLowerCase().includes("café")) ||
-                (selectedCategory === "others" && !asset.category.toLowerCase().includes("café") && !asset.category.toLowerCase().includes("cacao") && !asset.category.toLowerCase().includes("banana") && !asset.category.toLowerCase().includes("piña"));
+                product.category.toLowerCase() === selectedCategory.toLowerCase() ||
+                (selectedCategory === "coffee" && product.category.toLowerCase().includes("café")) ||
+                (selectedCategory === "cacao" && product.category.toLowerCase().includes("cacao")) ||
+                (selectedCategory === "banana" && (product.category.toLowerCase().includes("banana") || product.category.toLowerCase().includes("plátano"))) ||
+                (selectedCategory === "pineapple" && product.category.toLowerCase().includes("piña")) ||
+                (selectedCategory === "others" && 
+                  !product.category.toLowerCase().includes("café") && 
+                  !product.category.toLowerCase().includes("cacao") && 
+                  !product.category.toLowerCase().includes("banana") && 
+                  !product.category.toLowerCase().includes("plátano") &&
+                  !product.category.toLowerCase().includes("piña"));
               
               const matchesRegion = selectedRegion === "all" ||
-                asset.location.toLowerCase().includes(selectedRegion.toLowerCase());
+                locationStr.includes(selectedRegion.toLowerCase());
               
               return matchesSearch && matchesCategory && matchesRegion;
             })
-              .map((asset) => (
+              .map((product) => (
               <Card
-                key={asset._id}
-                className="rounded-2xl overflow-hidden border-2 border-[#d1e751]/30"
+                key={product._id}
+                className="rounded-2xl overflow-hidden border-2 border-[#d1e751]/30 hover:shadow-morpho transition-all cursor-pointer"
               >
-                <div
-                  className="cursor-pointer hover:shadow-morpho transition-shadow"
-                  onClick={() => {
-                    setSelectedAsset(asset);
-                    setShowProductForm(false);
-                  }}
-                >
-                  <div className="relative h-48">
-                    <ImageWithFallback
-                      src={asset.image}
-                      alt={asset.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3">
-                      <Badge variant={asset.status === "Popular" ? "primary" : "success"}>
-                        {asset.status}
-                      </Badge>
-                    </div>
+                <div onClick={() => setSelectedProduct(product)}>
+                <div className="relative h-48">
+                  <ImageWithFallback
+                    src={product.productImage || product.farmImage}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3">
+                    <Badge variant="success">
+                      Stock: {product.stock}
+                    </Badge>
                   </div>
-                  <div className="p-4 space-y-3">
-                    <Heading level={3} className="line-clamp-1">{asset.name}</Heading>
+                </div>
+                <div className="p-4 space-y-3">
+                  {/* Product Name */}
+                  <Heading level={3} className="line-clamp-1">{product.name}</Heading>
+                  
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2">
+                    <Heading level={2} className="text-[#26ade4]">
+                      {product.priceDisplay}
+                    </Heading>
                     <Text variant="caption" className="text-[#000000]/60">
-                      Por {asset.farmer} • {asset.location}
+                      / {product.unit}
                     </Text>
-                    <Text variant="small" className="line-clamp-2">
-                      {asset.description}
-                    </Text>
-                    
-                    <div className="pt-2 border-t border-[#d1e751]/30">
-                      <Text variant="caption" className="font-semibold text-[#66b32e] mb-2 block">
-                        Productos Disponibles:
-                      </Text>
-                      <div className="space-y-1">
-                        {asset.products.slice(0, 3).map((product: any, idx: number) => (
-                          <div key={idx} className="flex justify-between items-center">
-                            <Text variant="small" className="text-[#000000]/70">
-                              • {product.name}
-                            </Text>
-                            <Text variant="small" className="font-semibold text-[#26ade4]">
-                              {product.price}/{product.unit}
-                            </Text>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
+                  
+                  {/* Farm Info */}
+                  <div className="pt-2 border-t border-[#d1e751]/30">
+                    <Text variant="small" className="text-[#000000]/70">
+                      <span className="font-semibold text-[#66b32e]">Finca:</span> {product.farmName}
+                    </Text>
+                    <Text variant="caption" className="text-[#000000]/60">
+                      Por {product.farmerName} • {product.farmLocation}
+                    </Text>
+                  </div>
+                  
+                  {/* Description */}
+                  {product.description && (
+                    <Text variant="small" className="line-clamp-2 text-[#000000]/70">
+                      {product.description}
+                    </Text>
+                  )}
+                  
+                  {/* Buy Button */}
+                  <Button
+                    title="Comprar"
+                    icon={<ShoppingBag className="w-4 h-4" />}
+                    iconPosition="left"
+                    variant="blue"
+                    className="w-full bg-[#26ade4] hover:bg-[#26ade4]/90 text-white rounded-xl py-2"
+                  />
+                </div>
                 </div>
               </Card>
             ))}
@@ -299,7 +397,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
         )}
 
         {/* No Results */}
-        {!loading && assets.length === 0 && (
+        {!loading && products.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="bg-gray-100 rounded-full p-6 mb-4">
               <ShoppingBag className="w-16 h-16 text-gray-400" />
@@ -312,7 +410,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
             </Text>
             <Button
               title="Ver todas las fincas"
-              variant="primary"
+              variant="blue"
               onClick={() => onNavigate('inversion')}
               className="rounded-xl"
             />
@@ -326,127 +424,128 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
           />
         </div>
 
-        {/* Asset Detail Modal */}
+        {/* Product Detail Modal */}
         <Modal
-          isOpen={selectedAsset !== null}
+          isOpen={selectedProduct !== null}
           onClose={() => {
-            setSelectedAsset(null);
-            setShowProductForm(false);
+            setSelectedProduct(null);
+            setProductQuantity(1);
           }}
-          title={selectedAsset?.name}
+          title={selectedProduct?.name}
         >
-          {selectedAsset && (
+          {selectedProduct && (
             <>
-              <div className="space-y-4 mb-6">
-                <div className="flex items-start justify-between">
-                  <Text variant="caption">
-                    {t.card.by} {selectedAsset.farmer} • {selectedAsset.location}
-                  </Text>
-                  <Badge variant={selectedAsset.status === t.card.popular ? "primary" : "success"}>
-                    {selectedAsset.status}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="space-y-6 mt-6">
+              <div className="space-y-6">
+                {/* Product Image */}
                 <div className="relative h-64 rounded-xl overflow-hidden">
                   <ImageWithFallback
-                    src={selectedAsset.image}
-                    alt={selectedAsset.name}
+                    src={selectedProduct.productImage || selectedProduct.farmImage}
+                    alt={selectedProduct.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
 
-                <div>
-                  <Heading level={3} className="mb-2">{t.details.projectDescription}</Heading>
-                  <Text>{selectedAsset.description}</Text>
-                </div>
+                {/* Product Info */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <Heading level={2} className="text-[#26ade4] mb-1">
+                        {selectedProduct.priceDisplay}
+                      </Heading>
+                      <Text variant="caption" className="text-[#000000]/60">
+                        por {selectedProduct.unit}
+                      </Text>
+                    </div>
+                    <Badge variant="success">
+                      Stock: {selectedProduct.stock}
+                    </Badge>
+                  </div>
 
-                <div>
-                  <Heading level={3} className="mb-2">{t.details.sustainablePractices}</Heading>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedAsset.practices.map((practice, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-[#d1e751]/10">
-                        <Leaf className="w-4 h-4 text-[#d1e751]" />
-                        <Text variant="caption">{practice}</Text>
-                      </div>
-                    ))}
+                  {/* Description */}
+                  {selectedProduct.description && (
+                    <div>
+                      <Heading level={4} className="mb-2">Descripción</Heading>
+                      <Text>{selectedProduct.description}</Text>
+                    </div>
+                  )}
+
+                  {/* Farm Info */}
+                  <div className="p-4 rounded-lg bg-[#d1e751]/10 border border-[#d1e751]/30">
+                    <Text variant="caption" className="font-semibold text-[#66b32e] mb-2 block">
+                      Información de la Finca
+                    </Text>
+                    <Text variant="small">
+                      <span className="font-semibold">Finca:</span> {selectedProduct.farmName}
+                    </Text>
+                    <Text variant="small">
+                      <span className="font-semibold">Agricultor:</span> {selectedProduct.farmerName}
+                    </Text>
+                    <Text variant="small">
+                      <span className="font-semibold">Ubicación:</span> {selectedProduct.farmLocation}
+                    </Text>
                   </div>
                 </div>
 
                 <Separator />
 
-                {/* Action Buttons */}
-                {!showProductForm && (
+                {/* Purchase Form */}
+                <div className="p-6 rounded-xl bg-[#26ade4]/5 border-2 border-[#26ade4]/30 space-y-4">
+                  <Heading level={3}>Comprar Producto</Heading>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <Text variant="caption" className="mb-2 block">Cantidad</Text>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        min="1"
+                        max={selectedProduct.stock}
+                        className="w-full"
+                        value={productQuantity}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value, 10);
+                          const maxValue = Math.min(isNaN(value) ? 1 : value, selectedProduct.stock);
+                          setProductQuantity(Math.max(1, maxValue));
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Text variant="caption" className="mb-2 block">Unidad</Text>
+                      <Text className="font-semibold">{selectedProduct.unit}</Text>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-white border border-[#26ade4]/30 space-y-2">
+                    <div className="flex justify-between">
+                      <Text>Subtotal</Text>
+                      <Text className="font-semibold">
+                        ${(productQuantity * selectedProduct.price).toFixed(2)}
+                      </Text>
+                    </div>
+                    <div className="flex justify-between text-[#66b32e]">
+                      <Text variant="small">Recompensa Regenerativa (5%)</Text>
+                      <Text variant="small" className="font-semibold">
+                        +${((productQuantity * selectedProduct.price) * 0.05).toFixed(2)}
+                      </Text>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <Heading level={4}>Total</Heading>
+                      <Heading level={3} className="text-[#26ade4]">
+                        ${((productQuantity * selectedProduct.price) * 1.05).toFixed(2)}
+                      </Heading>
+                    </div>
+                  </div>
+
                   <Button
-                    title={t.details.buyProducts}
+                    title="Confirmar Compra"
                     icon={<ShoppingBag className="w-5 h-5" />}
                     iconPosition="left"
-                    onClick={() => setShowProductForm(true)}
+                    onClick={handleBuyProduct}
                     variant="blue"
-                    className="w-full bg-[#26ade4] hover:bg-[#26ade4]/90 text-white rounded-xl py-6"
+                    className="w-full bg-[#d1e751] hover:bg-[#d1e751]/90 text-black rounded-xl py-6"
                   />
-                )}
-
-                {/* Product Purchase Form */}
-                {showProductForm && (
-                  <div className="p-6 rounded-xl bg-[#d1e751]/5 border-2 border-[#d1e751]/30 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Heading level={3}>{t.productForm.title}</Heading>
-                      <button
-                        onClick={() => setShowProductForm(false)}
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {selectedAsset.products.map((product, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-white border border-[#d1e751]/30">
-                          <div className="flex-1">
-                            <Text>{product.name}</Text>
-                            <Text variant="caption">{product.price} / {product.unit}</Text>
-                          </div>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            min="0"
-                            className="w-20"
-                            value={productQuantity[product.name] ?? ''}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value, 10);
-                              setProductQuantity({
-                                ...productQuantity,
-                                [product.name]: isNaN(value) ? 0 : Math.max(0, value),
-                              });
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-[#26ade4]/10">
-                      <div className="flex justify-between">
-                        <Text>{t.productForm.total}</Text>
-                        <Heading level={3}>
-                          ${selectedAsset.products.reduce((sum, product) => {
-                            const qty = productQuantity[product.name] || 0;
-                            const price = parseInt(product.price.replace('$', ''));
-                            return sum + (qty * price);
-                          }, 0)}
-                        </Heading>
-                      </div>
-                    </div>
-
-                    <Button
-                      title={t.productForm.confirmPurchase}
-                      onClick={handleBuyProduct}
-                      variant="blue"
-                      className="w-full bg-[#d1e751] hover:bg-[#d1e751]/90 text-black rounded-xl py-6"
-                    />
-                  </div>
-                )}
+                </div>
               </div>
             </>
           )}
@@ -458,7 +557,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
             isOpen={showReceipt}
             onClose={() => {
               setShowReceipt(false);
-              setSelectedAsset(null);
+              setSelectedProduct(null);
             }}
             receiptData={receiptData}
           />

@@ -3,29 +3,69 @@ import { api, ApiResponse } from './api';
 
 export interface Transaction {
   _id: string;
-  user: string;
-  type: 'investment' | 'purchase' | 'sale' | 'reward';
+  from?: string;
+  to?: string;
+  fromWallet?: string;
+  toWallet?: string;
+  type: 'investment' | 'product-purchase' | 'token-transfer' | 'dividend' | 'harvest-sale' | 'withdrawal' | 'deposit' | 'refund' | 'fee' | 'other';
   amount: number;
-  status: 'pending' | 'completed' | 'failed';
+  amountInTokens?: number;
+  currency?: string;
+  fee?: number;
+  netAmount?: number;
   transactionHash?: string;
-  blockchainNetwork?: string;
-  relatedEntity?: {
-    type: 'farm' | 'product' | 'investment';
-    id: string;
-  };
-  metadata?: any;
+  blockNumber?: number;
+  blockTimestamp?: Date;
+  status: 'pending' | 'processing' | 'confirmed' | 'completed' | 'failed' | 'cancelled' | 'refunded';
+  relatedFarm?: string;
+  relatedInvestment?: string;
+  relatedProduct?: string;
+  farmTokenId?: string;
+  productListingId?: string;
+  metadata?: TransactionMetadata;
+  paymentMethod?: 'crypto' | 'card' | 'bank' | 'wallet' | 'other';
+  paymentProvider?: string;
+  externalTransactionId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface CreateTransactionData {
-  type: 'investment' | 'purchase' | 'sale' | 'reward';
-  amount: number;
-  relatedEntity?: {
-    type: 'farm' | 'product' | 'investment';
-    id: string;
+export interface TransactionMetadata {
+  description?: string;
+  notes?: string;
+  invoiceNumber?: string;
+  orderId?: string;
+  productName?: string;
+  quantity?: number;
+  unitPrice?: number;
+  farmName?: string;
+  investmentPercentage?: number;
+  products?: PurchasedProduct[];
+  shippingAddress?: {
+    street?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
   };
-  metadata?: any;
+}
+
+export interface PurchasedProduct {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  unit: string;
+  total: number;
+}
+
+export interface CreateTransactionData {
+  type: 'investment' | 'product-purchase' | 'token-transfer' | 'dividend' | 'harvest-sale' | 'withdrawal' | 'deposit' | 'refund' | 'fee' | 'other';
+  amount: number;
+  to?: string;
+  relatedFarm?: string;
+  relatedProduct?: string;
+  metadata?: TransactionMetadata;
+  paymentMethod?: 'crypto' | 'card' | 'bank' | 'wallet' | 'other';
 }
 
 class TransactionService {

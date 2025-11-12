@@ -145,8 +145,16 @@ class FarmService {
     unit: string;
     description?: string;
     category?: string;
+    images?: string[];
   }): Promise<ApiResponse<any>> {
     console.log('📦 Creating product for farm:', farmId, productData);
+    
+    // Convert base64 image strings to the format backend expects
+    const formattedImages = (productData.images || []).map((imageUrl, index) => ({
+      url: imageUrl,
+      caption: '',
+      isPrimary: index === 0 // First image is primary
+    }));
     
     const payload = {
       name: productData.name,
@@ -158,7 +166,8 @@ class FarmService {
       farm: farmId,
       status: 'active', // Backend uses 'active' not 'available'
       isOrganic: true,
-      isFairTrade: true
+      isFairTrade: true,
+      images: formattedImages
     };
     
     console.log('📤 Product payload:', payload);

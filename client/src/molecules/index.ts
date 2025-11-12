@@ -13,3 +13,4 @@ export { default as Modal } from './Modal';
 export { default as SearchBar } from './SearchBar';
 export { default as ProductInventoryCard } from './ProductInventoryCard';
 export { default as FarmInvestmentCard } from './FarmInvestmentCard';
+export { ImageUpload } from './ImageUpload';

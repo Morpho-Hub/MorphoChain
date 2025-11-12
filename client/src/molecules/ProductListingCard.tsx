@@ -1,17 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Package, Trash2 } from 'lucide-react';
+import { Calendar, Package, Trash2, Edit2 } from 'lucide-react';
 import { Chip } from '@/src/atoms';
 import { es } from '@/locales';
 import type { ProductListing } from '@/src/organisms/ProductListingForm';
 
 interface ProductListingCardProps {
   listing: ProductListing;
+  onEdit?: (listing: ProductListing) => void;
   onDelete?: (listingId: string) => void;
 }
 
-const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDelete }) => {
+const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onEdit, onDelete }) => {
   const t = es.productListing;
 
   const formatCurrency = (amount: number) => {
@@ -54,9 +55,17 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-morpho transition-all">
-      {/* Header con icono */}
-      <div className="relative h-32 bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
-        <Package className="w-16 h-16 text-green-600" />
+      {/* Header con imagen o icono */}
+      <div className="relative h-32 bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center overflow-hidden">
+        {listing.images && listing.images.length > 0 ? (
+          <img 
+            src={listing.images[0]} 
+            alt={listing.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Package className="w-16 h-16 text-green-600" />
+        )}
         {/* Badge de estado */}
         <div className="absolute top-3 right-3">
           <Chip
@@ -105,15 +114,27 @@ const ProductListingCard: React.FC<ProductListingCardProps> = ({ listing, onDele
               {formatCurrency(totalValue)}
             </p>
           </div>
-          {onDelete && (
-            <button
-              onClick={() => onDelete(listing.id)}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Eliminar producto"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          )}
+          <div className="flex gap-2">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(listing)}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                style={{ color: 'var(--morpho-blue)' }}
+                title="Editar producto"
+              >
+                <Edit2 className="w-5 h-5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(listing.id)}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Eliminar producto"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

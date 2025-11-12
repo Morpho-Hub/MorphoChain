@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Upload, Calendar } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Input } from '@/src/atoms';
+import { ImageUpload } from '@/src/molecules';
 import { es } from '@/locales';
 
 export interface ProductListing {
@@ -12,6 +13,9 @@ export interface ProductListing {
   unit: string;
   stock: number;
   status?: 'draft' | 'active' | 'out-of-stock' | 'discontinued' | 'pending';
+  images?: string[];
+  description?: string;
+  category?: string;
 }
 
 interface ProductListingFormProps {
@@ -45,6 +49,9 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
     stock: listing?.stock || 0,
     unit: listing?.unit || '',
     price: listing?.price || 0,
+    description: listing?.description || '',
+    category: listing?.category || '',
+    images: listing?.images || [],
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -88,6 +95,9 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
         stock: formData.stock,
         unit: formData.unit,
         price: formData.price,
+        description: formData.description,
+        category: formData.category,
+        images: formData.images,
         status: 'active',
       });
     }
@@ -118,6 +128,14 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
 
         {/* Form Content */}
         <div className="p-6 space-y-6">
+          {/* Imágenes del Producto */}
+          <ImageUpload
+            images={formData.images}
+            onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+            maxImages={5}
+            label="Imágenes del Producto"
+          />
+
           {/* Nombre del Producto */}
           <div>
             <label className="block text-sm font-medium text-black mb-2">
@@ -133,6 +151,44 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
             {errors.name && (
               <p className="mt-1 text-sm text-red-500">{errors.name}</p>
             )}
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              Categoría
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#26ade4] border-gray-300"
+            >
+              <option value="">Selecciona una categoría</option>
+              <option value="café">Café</option>
+              <option value="cacao">Cacao</option>
+              <option value="banana">Banana/Plátano</option>
+              <option value="piña">Piña</option>
+              <option value="frutas">Frutas</option>
+              <option value="vegetales">Vegetales</option>
+              <option value="granos">Granos</option>
+              <option value="otros">Otros</option>
+            </select>
+          </div>
+
+          {/* Descripción */}
+          <div>
+            <label className="block text-sm font-medium text-black mb-2">
+              Descripción del Producto
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Describe las características de tu producto..."
+              rows={3}
+              className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#26ade4] border-gray-300 resize-none"
+            />
           </div>
 
           {/* Stock y Unidad */}
