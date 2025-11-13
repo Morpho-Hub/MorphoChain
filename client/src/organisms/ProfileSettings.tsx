@@ -9,6 +9,7 @@ import { es } from '@/locales';
 import { useAuth } from '@/contexts/AuthContext';
 import { WalletActionsModal } from './WalletActionsModal';
 import axios from 'axios';
+import { useActiveAccount } from 'thirdweb/react';
 
 interface ProfileFormData {
   firstName: string;
@@ -25,6 +26,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 const ProfileSettings: React.FC = () => {
   const t = es.profile;
   const { user, walletAddress, logout } = useAuth();
+  const activeAccount = useActiveAccount();
   
   const [formData, setFormData] = useState<ProfileFormData>({
     firstName: '',
@@ -186,7 +188,7 @@ const ProfileSettings: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off" data-1p-ignore data-lpignore="true">
           {/* Grid Layout Principal */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
             {/* Columna Izquierda - Avatar y Nombre */}
@@ -325,10 +327,13 @@ const ProfileSettings: React.FC = () => {
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">Tu Wallet</p>
                       <p className="font-mono text-xs text-gray-700 break-all">
-                        {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : user?.walletAddress || 'No conectada'}
+                        {(activeAccount?.address || user?.walletAddress || walletAddress) 
+                          ? `${(activeAccount?.address || user?.walletAddress || walletAddress)!.slice(0, 6)}...${(activeAccount?.address || user?.walletAddress || walletAddress)!.slice(-4)}`
+                          : 'No conectada'}
                       </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setShowWalletMenu(!showWalletMenu)}
                       className="px-4 py-2 bg-white text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors border border-blue-300"
                     >
@@ -340,6 +345,7 @@ const ProfileSettings: React.FC = () => {
                     <div className="mt-4 pt-4 border-t border-blue-200 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <button
+                          type="button"
                           onClick={() => setModalAction('send')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
@@ -347,6 +353,7 @@ const ProfileSettings: React.FC = () => {
                           <span className="text-sm font-medium text-gray-900">Enviar</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => setModalAction('receive')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
@@ -354,6 +361,7 @@ const ProfileSettings: React.FC = () => {
                           <span className="text-sm font-medium text-gray-900">Recibir</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => setModalAction('transactions')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
@@ -361,6 +369,7 @@ const ProfileSettings: React.FC = () => {
                           <span className="text-sm font-medium text-gray-900">Transacciones</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => setModalAction('assets')}
                           className="flex items-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                         >
@@ -370,6 +379,7 @@ const ProfileSettings: React.FC = () => {
                       </div>
                       
                       <button
+                        type="button"
                         onClick={() => setModalAction('settings')}
                         className="w-full flex items-center justify-center gap-2 p-3 bg-white hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
                       >
@@ -378,6 +388,7 @@ const ProfileSettings: React.FC = () => {
                       </button>
 
                       <button
+                        type="button"
                         onClick={async () => {
                           if (confirm('¿Estás seguro de que deseas desconectar tu wallet?')) {
                             try {

@@ -250,7 +250,7 @@ export const authController = {
                 return errorResponse(res, 'Role must be farmer or investor', 400);
             }
 
-            // Check if user exists with this wallet or email
+            // Check if user exists with this wallet or email (normalize for lookup)
             const existingWallet = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
             if (existingWallet) {
                 return errorResponse(res, 'Wallet already registered', 409);

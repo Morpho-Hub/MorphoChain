@@ -18,6 +18,9 @@ router.get('/token/info', blockchainController.getTokenInfo);
 // Token balance
 router.get('/token/balance/:address', blockchainController.getTokenBalance);
 
+// ETH balance (public)
+router.get('/eth/balance/:address', blockchainController.getEthBalance);
+
 // Marketplace - Listings activos
 router.get('/marketplace/listings/active', blockchainController.getActiveListings);
 

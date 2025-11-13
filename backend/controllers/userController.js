@@ -188,6 +188,7 @@ export const userController = {
   getUserByWallet: asyncHandler(async (req, res) => {
     const { address } = req.params;
 
+    // Normalize to lowercase for lookup (DB stores lowercase)
     const user = await User.findOne({ walletAddress: address.toLowerCase() })
       .select('-emailVerificationToken');
 

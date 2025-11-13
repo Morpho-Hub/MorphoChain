@@ -45,8 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [loading, setLoading] = useState(true);
   const account = useActiveAccount();
-  // Normalize wallet address to lowercase to match database format
-  const walletAddress = account?.address?.toLowerCase();
+  // Preserve checksum-cased address from Thirdweb
+  const walletAddress = account?.address;
 
   // Check if user exists when wallet connects or on mount
   useEffect(() => {
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('🔍 Checking wallet:', walletAddress);
         
-        // Try to get user by wallet address
+        // Try to get user by wallet address (backend will normalize for lookup)
         const response = await authService.getUserByWallet(walletAddress);
         
         console.log('📡 Response from getUserByWallet:', response);

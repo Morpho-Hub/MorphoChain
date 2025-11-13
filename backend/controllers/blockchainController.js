@@ -300,6 +300,21 @@ export const getMarketplaceStats = asyncHandler(async (req, res) => {
 });
 
 /**
+ * GET /api/blockchain/eth/balance/:address
+ * Obtiene el balance de ETH de una dirección
+ */
+export const getEthBalance = asyncHandler(async (req, res) => {
+  const { address } = req.params;
+
+  if (!address) {
+    return errorResponse(res, 'address es requerido', 400);
+  }
+
+  const balance = await blockchainService.getETHBalance(address);
+  return successResponse(res, { balance }, 'Balance de ETH obtenido');
+});
+
+/**
  * POST /api/blockchain/marketplace/calculate-cost
  * Calcula el costo de comprar cierta cantidad de un listing
  * Body: { listingId, amount }

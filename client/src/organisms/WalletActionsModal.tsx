@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Send, Download, Copy, Check, ExternalLink } from 'lucide-react';
 import { useActiveAccount } from 'thirdweb/react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useAuth } from '@/contexts/AuthContext';
+import { blockchainService } from '@/src/services/blockchainService';
 
 interface WalletActionsModalProps {
   isOpen: boolean;
@@ -17,16 +19,35 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
   action,
 }) => {
   const account = useActiveAccount();
+  const { walletAddress: authWallet, user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [sendForm, setSendForm] = useState({
     to: '',
     amount: '',
     token: 'ETH',
   });
+  const [ethBalance, setEthBalance] = useState<string>('0');
 
+  // Compute address and run hooks unconditionally to preserve hook order across renders
+  const walletAddress = (account?.address || authWallet || user?.walletAddress || '') as string;
+
+  useEffect(() => {
+    const fetchEth = async () => {
+      try {
+        if (!walletAddress) return;
+        const res = await blockchainService.getEthBalance(walletAddress);
+        if (res.success && res.data) {
+          setEthBalance(res.data.balance);
+        }
+      } catch (e) {
+        // keep default
+      }
+    };
+    fetchEth();
+  }, [walletAddress]);
+
+  // After hooks, bail out early if modal is not open
   if (!isOpen || !action) return null;
-
-  const walletAddress = account?.address || '';
 
   const handleCopyAddress = async () => {
     try {
@@ -151,8 +172,8 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
               </div>
               
               <p className="text-sm text-gray-600 mb-2">Tu dirección de wallet:</p>
-              <div className="bg-white p-3 rounded-lg break-all font-mono text-sm text-gray-900 mb-4">
-                {walletAddress}
+              <div className={`bg-white p-3 rounded-lg break-all font-mono text-sm mb-4 ${walletAddress ? 'text-gray-900' : 'text-gray-400'}`}>
+                {walletAddress || 'No conectada'}
               </div>
 
               <button
@@ -234,7 +255,7 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold text-gray-900">Sepolia ETH</span>
-                  <span className="text-sm text-gray-600">0.0 ETH</span>
+                  <span className="text-sm text-gray-600">{Number(ethBalance).toFixed(4)} ETH</span>
                 </div>
                 <p className="text-xs text-gray-500">Red: Sepolia Testnet</p>
               </div>
