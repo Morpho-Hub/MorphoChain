@@ -165,14 +165,13 @@ const ProductListingForm: React.FC<ProductListingFormProps> = ({
               className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#26ade4] border-gray-300"
             >
               <option value="">Selecciona una categoría</option>
-              <option value="café">Café</option>
+              <option value="coffee">Café</option>
               <option value="cacao">Cacao</option>
-              <option value="banana">Banana/Plátano</option>
-              <option value="piña">Piña</option>
-              <option value="frutas">Frutas</option>
-              <option value="vegetales">Vegetales</option>
-              <option value="granos">Granos</option>
-              <option value="otros">Otros</option>
+              <option value="fruits">Frutas (Banana, Piña, etc.)</option>
+              <option value="vegetables">Vegetales</option>
+              <option value="grains">Granos</option>
+              <option value="honey">Miel</option>
+              <option value="other">Otros</option>
             </select>
           </div>
 

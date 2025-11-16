@@ -115,7 +115,7 @@ export const productController = {
       ...req.body,
       seller: userId,
       sellerWallet: req.user.walletAddress,
-      status: 'draft'
+      status: req.body.status || 'draft'
     };
 
     const product = new Product(productData);
