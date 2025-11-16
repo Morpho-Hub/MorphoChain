@@ -18,10 +18,16 @@ export function ConnectWalletButton({ className }: ConnectWalletButtonProps) {
         }}
         connectModal={{
           title: "Conecta tu Wallet",
+          size: "wide",
           welcomeScreen: {
             title: "MorphoChain",
             subtitle: "Plataforma de Inversión Agrícola con Blockchain",
           },
+        }}
+        appMetadata={{
+          name: "MorphoChain",
+          description: "Plataforma de Inversión Agrícola Regenerativa",
+          url: "https://morphochain.com",
         }}
       />
     </div>

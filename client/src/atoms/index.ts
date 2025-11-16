@@ -20,3 +20,4 @@ export { ConnectWalletButton } from './ConnectWalletButton';
 export { TokenBalance } from './TokenBalance';
 export { WalletInfo } from './WalletInfo';
 export { TransactionStatus } from './TransactionStatus';
+export { WalletConnectErrorBoundary } from './WalletConnectErrorBoundary';

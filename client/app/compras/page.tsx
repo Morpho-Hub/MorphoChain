@@ -31,7 +31,7 @@ export default function PurchasesPage() {
         if (response.success && response.data) {
           // Filter only purchase transactions and format them as ReceiptData
           const purchaseReceipts = response.data
-            .filter(tx => tx.type === 'purchase')
+            .filter(tx => tx.type === 'product-purchase')
             .map(tx => {
               const metadata = tx.metadata || {};
               

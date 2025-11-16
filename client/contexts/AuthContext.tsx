@@ -83,28 +83,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await authService.getUserByWallet(walletAddress);
         
         console.log('📡 Response from getUserByWallet:', response);
+        console.log('📡 response.success:', response.success);
+        console.log('📡 response.data:', response.data);
+        console.log('📡 response.error:', response.error);
         
         if (response.success && response.data) {
           // User exists, login
           // The response contains { user, token }
           const userData = response.data.user || response.data;
           console.log('✅ Usuario encontrado:', userData);
+          console.log('Setting isLoggedIn=true, needsOnboarding=false');
           setUser(userData as User);
           setIsLoggedIn(true);
           setNeedsOnboarding(false);
+          
+          // Store in localStorage for persistence
+          localStorage.setItem('user', JSON.stringify(userData));
+          if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+          }
         } else {
           // User doesn't exist, needs onboarding
           console.log('❌ Usuario no encontrado, needs onboarding');
+          console.log('Setting isLoggedIn=false, needsOnboarding=true');
           setUser(null);
           setIsLoggedIn(false);
           setNeedsOnboarding(true);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error checking user:', error);
-        // On error, check if user doesn't exist or it's a network issue
-        setUser(null);
-        setIsLoggedIn(false);
-        setNeedsOnboarding(true);
+        
+        // Check if it's a 404 (user not found) - that means needs onboarding
+        // Any other error (network, server, etc.) should not trigger onboarding
+        const is404 = error?.response?.status === 404 || error?.status === 404;
+        
+        if (is404) {
+          console.log('⚠️ 404 - Usuario no existe, needs onboarding');
+          setUser(null);
+          setIsLoggedIn(false);
+          setNeedsOnboarding(true);
+        } else {
+          console.log('⚠️ Error de red u otro problema, no mostrar onboarding');
+          // Don't set needsOnboarding on network errors
+          setUser(null);
+          setIsLoggedIn(false);
+          setNeedsOnboarding(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -132,8 +156,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(response.data.user as User);
         setIsLoggedIn(true);
         setNeedsOnboarding(false);
+        
+        // Store in localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+        
         return { success: true };
       } else {
+        // Check if wallet is already registered
+        if (response.error?.includes('Wallet already registered') || response.error?.includes('already registered')) {
+          console.log('⚠️ Wallet already registered, trying to login instead...');
+          // Try to fetch user by wallet
+          const loginResponse = await authService.getUserByWallet(walletAddress);
+          if (loginResponse.success && loginResponse.data) {
+            const userData = loginResponse.data.user || loginResponse.data;
+            setUser(userData as User);
+            setIsLoggedIn(true);
+            setNeedsOnboarding(false);
+            
+            // Store in localStorage
+            localStorage.setItem('user', JSON.stringify(userData));
+            if (loginResponse.data.token) {
+              localStorage.setItem('token', loginResponse.data.token);
+            }
+            
+            return { success: true };
+          }
+        }
+        
         return { 
           success: false, 
           error: response.error || 'Error al completar perfil'

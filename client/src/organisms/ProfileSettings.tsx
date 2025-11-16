@@ -463,7 +463,7 @@ const ProfileSettings: React.FC = () => {
           {/* Botones de Acción */}
           <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
             <button
-              type="submit"
+
               disabled={isLoading}
               className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 shadow-lg flex items-center justify-center gap-2 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -7,7 +7,7 @@ interface HeadingProps {
 }
 
 const Heading: FC<HeadingProps> = ({ level = 2, children, className = "" }) => {
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
   const baseStyles = "text-[#000000] font-semibold";
   
   const sizes = {

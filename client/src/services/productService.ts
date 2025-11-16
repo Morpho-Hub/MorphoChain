@@ -74,7 +74,12 @@ class ProductService {
   }
 
   async getProductsByFarm(farmId: string): Promise<ApiResponse<Product[]>> {
-    return api.get<Product[]>(`/products/farm/${farmId}`);
+    // Use public products endpoint with farm filter to avoid auth requirement
+    const params = new URLSearchParams();
+    params.append('farm', farmId);
+    // Prefer active products by default
+    params.append('status', 'active');
+    return api.get<Product[]>(`/products?${params.toString()}`);
   }
 
   async getByFarm(farmId: string): Promise<ApiResponse<Product[]>> {

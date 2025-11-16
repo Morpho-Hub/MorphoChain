@@ -39,8 +39,18 @@ export interface TransactionMetadata {
   quantity?: number;
   unitPrice?: number;
   farmName?: string;
+  farmLocation?: string;
+  sellerName?: string;
   investmentPercentage?: number;
+  subtotal?: number;
+  regenerativeReward?: number;
   products?: PurchasedProduct[];
+  chainPayment?: {
+    token: string;
+    amount: number;
+    to: string;
+    transactionHash?: string;
+  };
   shippingAddress?: {
     street?: string;
     city?: string;

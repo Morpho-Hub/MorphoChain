@@ -149,7 +149,7 @@ const ProfileForm: FC<ProfileFormProps> = ({
         )}
 
         <Button
-          type="submit"
+
           title={submitButtonText}
           variant="blue"
           className="w-full bg-[#26ade4] hover:bg-[#26ade4]/90 text-white rounded-xl py-6"

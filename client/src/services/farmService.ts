@@ -60,7 +60,8 @@ class FarmService {
     region?: string;
     status?: string;
   }): Promise<ApiResponse<Farm[]>> {
-    let endpoint = '/farms';
+    // Use public endpoint for unauthenticated listings
+    let endpoint = '/farms/public';
     
     if (filters) {
       const params = new URLSearchParams();

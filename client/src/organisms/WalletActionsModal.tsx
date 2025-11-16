@@ -27,6 +27,7 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
     token: 'ETH',
   });
   const [ethBalance, setEthBalance] = useState<string>('0');
+  const [morphoBalances, setMorphoBalances] = useState<{ total: string; available: string; frozen: string}>({ total: '0', available: '0', frozen: '0' });
 
   // Compute address and run hooks unconditionally to preserve hook order across renders
   const walletAddress = (account?.address || authWallet || user?.walletAddress || '') as string;
@@ -43,7 +44,23 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
         // keep default
       }
     };
+    const fetchMorpho = async () => {
+      try {
+        if (!walletAddress) return;
+        const res = await blockchainService.getTokenBalance(walletAddress);
+        if (res.success && res.data) {
+          setMorphoBalances({
+            total: res.data.totalBalance,
+            available: res.data.availableBalance,
+            frozen: res.data.frozenBalance,
+          });
+        }
+      } catch (e) {
+        // keep default
+      }
+    };
     fetchEth();
+    fetchMorpho();
   }, [walletAddress]);
 
   // After hooks, bail out early if modal is not open
@@ -129,7 +146,7 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
 
               <div className="flex gap-3 pt-4">
                 <button
-                  type="submit"
+
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
                 >
                   Enviar
@@ -263,7 +280,7 @@ export const WalletActionsModal: React.FC<WalletActionsModalProps> = ({
               <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold text-gray-900">MorphoCoin (MORPHO)</span>
-                  <span className="text-sm text-gray-600">0.0 MORPHO</span>
+                  <span className="text-sm text-gray-600">{Number(morphoBalances.available || morphoBalances.total).toFixed(4)} MORPHO</span>
                 </div>
                 <p className="text-xs text-gray-500">Token ERC-20</p>
               </div>

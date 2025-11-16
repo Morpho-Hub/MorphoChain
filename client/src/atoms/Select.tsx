@@ -11,6 +11,7 @@ const Select: FC<SelectProps> = ({ options, className = "", ...props }) => {
     <div className="relative">
       <select
         className={`appearance-none px-4 py-2 pr-10 rounded-xl border-2 border-black/20 bg-white text-black focus:border-[#d1e751] focus:outline-none cursor-pointer w-full ${className}`}
+        suppressHydrationWarning
         {...props}
       >
         {options.map((option) => (

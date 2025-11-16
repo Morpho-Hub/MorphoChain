@@ -14,6 +14,7 @@ export const productController = {
       limit = 12,
       category,
       status,
+      farm,
       minPrice,
       maxPrice,
       isOrganic,
@@ -28,6 +29,7 @@ export const productController = {
     if (category) filter.category = category;
     if (status) filter.status = status;
     else filter.status = 'active'; // Default to active products only
+    if (farm) filter.farm = farm;
     
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -45,7 +47,14 @@ export const productController = {
     const [products, total] = await Promise.all([
       Product.find(filter)
         .populate('seller', 'firstName lastName profilePicture walletAddress')
-        .populate('farm', 'name location')
+        .populate({
+          path: 'farm',
+          select: 'name location images owner',
+          populate: {
+            path: 'owner',
+            select: 'firstName lastName'
+          }
+        })
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit))

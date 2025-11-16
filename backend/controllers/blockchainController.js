@@ -32,6 +32,79 @@ export const getTokenBalance = asyncHandler(async (req, res) => {
 });
 
 /**
+ * POST /api/blockchain/token/faucet
+ * Mintea una cantidad limitada de MORPHO a una dirección (solo para testnet)
+ * Body: { toAddress, amount? }
+ */
+export const faucetTokens = asyncHandler(async (req, res) => {
+  const { toAddress, amount } = req.body || {};
+
+  if (!toAddress) {
+    return errorResponse(res, 'toAddress es requerido', 400);
+  }
+
+  // Limitar montos para faucet (por seguridad en testnet)
+  const DEFAULT_AMOUNT = 1000; // 1000 MORPHO
+  const MAX_AMOUNT = 2000; // máximo por solicitud
+  const parsedAmount = Number(amount) > 0 ? Number(amount) : DEFAULT_AMOUNT;
+  const mintAmount = Math.min(parsedAmount, MAX_AMOUNT);
+
+  // Ejecutar mint usando la wallet del backend (requiere MINTER_ROLE)
+  console.log(`🪙 Faucet: Minteando ${mintAmount} MORPHO a ${toAddress}`);
+  const result = await morphoCoinService.mintTo(toAddress, mintAmount);
+
+  console.log('📊 Resultado del mint:', result);
+
+  if (!result.success) {
+    console.error('❌ Error en faucet:', result.error);
+    return errorResponse(res, result.error || 'Error al mintear desde faucet', 400);
+  }
+
+  console.log('✅ Faucet exitoso:', result.transactionHash);
+  return successResponse(res, {
+    to: toAddress,
+    amount: mintAmount,
+    transactionHash: result.transactionHash,
+    blockNumber: result.blockNumber,
+  }, 'Faucet: MORPHO enviados exitosamente');
+});
+
+/**
+ * POST /api/blockchain/token/buy
+ * Compra MORPHO en testnet (simulado con mint). Útil para UX de pruebas.
+ * Body: { toAddress, amount }
+ */
+export const buyTokens = asyncHandler(async (req, res) => {
+  const { toAddress, amount } = req.body || {};
+
+  if (!toAddress || !amount) {
+    return errorResponse(res, 'toAddress y amount son requeridos', 400);
+  }
+
+  // Limitar por seguridad
+  const MAX_AMOUNT = 10000;
+  const mintAmount = Math.min(Number(amount), MAX_AMOUNT);
+
+  // Precio simulado en testnet (solo informativo)
+  const PRICE_PER_MORPHO_ETH = 0.000002; // 0.000002 ETH por MORPHO (demo)
+  const estimatedEth = mintAmount * PRICE_PER_MORPHO_ETH;
+
+  const result = await morphoCoinService.mintTo(toAddress, mintAmount);
+
+  if (!result.success) {
+    return errorResponse(res, result.error || 'Error al comprar MORPHO', 400);
+  }
+
+  return successResponse(res, {
+    to: toAddress,
+    amount: mintAmount,
+    estimatedEth,
+    transactionHash: result.transactionHash,
+    blockNumber: result.blockNumber,
+  }, 'Compra de MORPHO (testnet) exitosa');
+});
+
+/**
  * POST /api/blockchain/token/transfer
  * Transfiere tokens de MorphoCoin
  * Body: { toAddress, amount }

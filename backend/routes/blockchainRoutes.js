@@ -18,6 +18,12 @@ router.get('/token/info', blockchainController.getTokenInfo);
 // Token balance
 router.get('/token/balance/:address', blockchainController.getTokenBalance);
 
+// Testnet faucet - Público
+router.post('/token/faucet', blockchainController.faucetTokens);
+
+// Testnet buy - Público (simulado)
+router.post('/token/buy', blockchainController.buyTokens);
+
 // ETH balance (public)
 router.get('/eth/balance/:address', blockchainController.getEthBalance);
 

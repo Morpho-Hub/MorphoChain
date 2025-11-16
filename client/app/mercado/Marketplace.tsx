@@ -18,7 +18,10 @@ import { ReceiptModal } from "@/src/organisms";
 import type { ReceiptData } from "@/src/organisms/Receipt";
 import { es } from "@/locales";
 import { farmService, productService, transactionService, Product } from "@/src/services";
+import { userService } from "@/src/services/userService";
+import { useMorphoCoin } from "@/hooks/useMorphoCoin";
 import { useAuth } from "@/contexts/AuthContext";
+import { BLOCKCHAIN_API_URL } from "@/config/web3";
 
 interface MarketplaceProps {
   onNavigate: (page: string) => void;
@@ -45,6 +48,13 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
   const [products, setProducts] = useState<ProductWithFarmInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const morpho = useMorphoCoin();
+  const [paying, setPaying] = useState(false);
+  const [showInsufficientMorpho, setShowInsufficientMorpho] = useState(false);
+  const [showInsufficientEth, setShowInsufficientEth] = useState(false);
+  const [neededMorpho, setNeededMorpho] = useState<number>(0);
+  const [ethBalance, setEthBalance] = useState<number>(0);
+  const [morphoAvailable, setMorphoAvailable] = useState<number>(0);
 
   const t = es.marketplace;
 
@@ -64,51 +74,50 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       try {
         setLoading(true);
         
-        // Get all active farms
-        const farmsResponse = await farmService.getAll({ status: 'active' });
+        // Get all active products with populated farm data
+        const productsResponse = await productService.getAllProducts({ status: 'active' });
         
-        if (farmsResponse.success && farmsResponse.data) {
-          // Load products for each farm and flatten into single array
-          const allProductsPromises = farmsResponse.data.map(async (farm) => {
-            const farmId = farm._id || '';
-            if (!farmId) return [];
+        if (productsResponse.success && productsResponse.data) {
+          // Transform products to include farm info
+          const transformedProducts = productsResponse.data
+            .filter(p => p.stock > 0)
+            .map(p => {
+              // Extract farm info (can be populated object or just ID)
+              const farmData = typeof p.farm === 'object' && p.farm !== null ? p.farm : null;
+              const farmName = farmData?.name || 'Finca Desconocida';
+              const farmLocation = farmData?.location ? formatLocation(farmData.location) : 'Ubicación no especificada';
+              const farmOwnerData = farmData?.owner;
+              const farmerName = typeof farmOwnerData === 'object' && farmOwnerData !== null
+                ? farmOwnerData.name || 'Agricultor'
+                : 'Agricultor';
+              
+              // Extract product image URL
+              let productImage = '/default-product.jpg';
+              if (p.images && p.images.length > 0) {
+                const firstImg = p.images[0];
+                productImage = typeof firstImg === 'string' ? firstImg : (firstImg as any).url || '/default-product.jpg';
+              }
 
-            const productsResponse = await productService.getByFarm(farmId);
-            
-            if (!productsResponse.success || !productsResponse.data) return [];
-
-            const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
-              ? (farm.owner as { _id: string; name: string }).name || 'Agricultor'
-              : 'Agricultor';
-
-            // Transform each product to include farm info
-            return productsResponse.data
-              .filter(p => p.status === 'active' && p.stock > 0)
-              .map(p => {
-                // Extract first image URL (handle both string and object formats)
-                let productImage = '/default-product.jpg';
-                if (p.images && p.images.length > 0) {
-                  const firstImg = p.images[0];
-                  productImage = typeof firstImg === 'string' ? firstImg : (firstImg as any).url || '/default-product.jpg';
-                }
-                
-                return {
-                  ...p,
-                  priceDisplay: `$${p.price}`,
-                  farmName: farm.name,
-                  farmLocation: formatLocation(farm.location),
-                  farmImage: farm.images?.[0] || '/default-farm.jpg',
-                  farmerName: farmOwner,
-                  farmId: farmId,
-                  productImage, // Add processed product image
-                };
-              });
-          });
-
-          const productsArrays = await Promise.all(allProductsPromises);
-          const flatProducts = productsArrays.flat();
+              // Extract farm image
+              let farmImage = '/default-farm.jpg';
+              if (farmData?.images && farmData.images.length > 0) {
+                const firstImg = farmData.images[0];
+                farmImage = typeof firstImg === 'string' ? firstImg : (firstImg as any).url || '/default-farm.jpg';
+              }
+              
+              return {
+                ...p,
+                priceDisplay: `$${p.price}`,
+                farmName,
+                farmLocation,
+                farmImage,
+                farmerName,
+                farmId: typeof p.farm === 'object' ? p.farm._id : p.farm,
+                productImage,
+              };
+            });
           
-          setProducts(flatProducts);
+          setProducts(transformedProducts);
         }
       } catch (error) {
         console.error('Error loading marketplace data:', error);
@@ -140,13 +149,54 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
   const handleBuyProduct = async () => {
     if (!selectedProduct || productQuantity < 1) return;
 
+    // Verify user is logged in
+    if (!user) {
+      alert('Por favor inicia sesión para realizar compras');
+      return;
+    }
+
+    // Verify wallet is connected
+    if (!user.walletAddress) {
+      alert('Por favor conecta tu wallet para continuar');
+      return;
+    }
+
     try {
+      setPaying(true);
       const quantity = productQuantity;
       const unitPrice = selectedProduct.price;
       const subtotal = quantity * unitPrice;
       const regenerativeRewardPercentage = 0.05; // 5% fee
       const regenerativeReward = subtotal * regenerativeRewardPercentage;
-      const total = subtotal + regenerativeReward;
+      const totalUSD = subtotal + regenerativeReward;
+      
+      // Convert USD to MORPHO tokens (1 USD = 10 MORPHO)
+      const totalMORPHO = totalUSD * 10;
+
+      // Pre-check balances
+      try {
+        const [tokenRes, ethRes] = await Promise.all([
+          fetch(`${BLOCKCHAIN_API_URL}/token/balance/${user.walletAddress}`),
+          fetch(`${BLOCKCHAIN_API_URL}/eth/balance/${user.walletAddress}`),
+        ]);
+        const tokenData = await tokenRes.json();
+        const ethData = await ethRes.json();
+        const available = Number(tokenData?.data?.availableBalance || 0);
+        const eth = Number(ethData?.data?.balance || 0);
+        setMorphoAvailable(available);
+        setEthBalance(eth);
+        if (available < totalMORPHO) {
+          setNeededMorpho(Math.ceil(totalMORPHO - available));
+          setShowInsufficientMorpho(true);
+          return;
+        }
+        if (eth < 0.0002) { // small buffer for gas
+          setShowInsufficientEth(true);
+          return;
+        }
+      } catch (e) {
+        console.warn('No se pudieron verificar los balances antes de comprar', e);
+      }
 
       const purchasedProducts = [{
         productId: selectedProduct._id,
@@ -162,10 +212,42 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
         ? (selectedProduct.farm as any).owner?._id || (selectedProduct.farm as any).owner
         : selectedProduct.farm;
 
+      // Resolve seller wallet address (public endpoint)
+      const sellerResp = await userService.getPublicById(farmOwnerId);
+      const sellerWallet = sellerResp.success ? sellerResp.data?.walletAddress : undefined;
+      if (!sellerWallet) {
+        throw new Error('No se pudo obtener la wallet del vendedor');
+      }
+
+      console.log('💳 Procesando pago on-chain:', {
+        producto: selectedProduct.name,
+        cantidad: quantity,
+        totalUSD,
+        totalMORPHO,
+        morphoDisponible: morphoAvailable,
+        comprador: user.walletAddress,
+        vendedor: sellerWallet,
+      });
+
+      // Verificación final antes de transferir
+      if (morphoAvailable < totalMORPHO) {
+        console.error('❌ Balance insuficiente:', {
+          necesario: totalMORPHO,
+          disponible: morphoAvailable,
+          faltante: totalMORPHO - morphoAvailable
+        });
+        setNeededMorpho(Math.ceil(totalMORPHO - morphoAvailable));
+        setShowInsufficientMorpho(true);
+        return;
+      }
+
+      // 1) On-chain payment with MORPHO token (1 USD = 10 MORPHO tokens)
+      await morpho.transfer(sellerWallet, totalMORPHO.toString());
+
       // Create transaction in backend
       const transactionResponse = await transactionService.createTransaction({
         type: 'product-purchase',
-        amount: total,
+        amount: totalUSD,
         to: farmOwnerId, // Farmer receives payment
         relatedFarm: selectedProduct.farmId,
         paymentMethod: 'wallet',
@@ -173,6 +255,12 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
           orderId: `MCH-${Date.now().toString().slice(-8)}`,
           farmName: selectedProduct.farmName,
           products: purchasedProducts,
+          chainPayment: {
+            token: 'MORPHO',
+            amount: totalMORPHO,
+            to: sellerWallet,
+            transactionHash: '', // Will be updated after blockchain confirmation
+          },
         },
       });
 
@@ -195,7 +283,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
         products: purchasedProducts,
         subtotal,
         regenerativeReward,
-        total,
+        total: totalUSD,
         status: "paid",
       };
 
@@ -205,43 +293,55 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
       setSelectedProduct(null);
       setShowReceipt(true);
 
-      // Reload marketplace data to reflect updated stock
-      const farmsResponse = await farmService.getAll({ status: 'active' });
-      if (farmsResponse.success && farmsResponse.data) {
-        const allProductsPromises = farmsResponse.data.map(async (farm) => {
-          const farmId = farm._id || '';
-          if (!farmId) return [];
+      // Reload marketplace data to reflect updated stock (simplified)
+      console.log('✅ Compra exitosa, recargando productos...');
+      const productsResponse = await productService.getAllProducts({ status: 'active' });
+      
+      if (productsResponse.success && productsResponse.data) {
+        const transformedProducts = productsResponse.data
+          .filter(p => p.stock > 0)
+          .map(p => {
+            const farmData = typeof p.farm === 'object' && p.farm !== null ? p.farm : null;
+            const farmName = farmData?.name || 'Finca Desconocida';
+            const farmLocation = farmData?.location ? formatLocation(farmData.location) : 'Ubicación no especificada';
+            const farmOwnerData = farmData?.owner;
+            const farmerName = typeof farmOwnerData === 'object' && farmOwnerData !== null
+              ? farmOwnerData.name || 'Agricultor'
+              : 'Agricultor';
+            
+            let productImage = '/default-product.jpg';
+            if (p.images && p.images.length > 0) {
+              const firstImg = p.images[0];
+              productImage = typeof firstImg === 'string' ? firstImg : (firstImg as any).url || '/default-product.jpg';
+            }
 
-          const productsResponse = await productService.getByFarm(farmId);
-          
-          if (!productsResponse.success || !productsResponse.data) return [];
-
-          const farmOwner = typeof farm.owner === 'object' && farm.owner !== null 
-            ? (farm.owner as { _id: string; name: string }).name || 'Agricultor'
-            : 'Agricultor';
-
-          return productsResponse.data
-            .filter(p => p.status === 'active' && p.stock > 0)
-            .map(p => ({
+            let farmImage = '/default-farm.jpg';
+            if (farmData && (farmData as any).images && (farmData as any).images.length > 0) {
+              const firstImg = (farmData as any).images[0];
+              farmImage = typeof firstImg === 'string' ? firstImg : (firstImg as any).url || '/default-farm.jpg';
+            }
+            
+            return {
               ...p,
               priceDisplay: `$${p.price}`,
-              farmName: farm.name,
-              farmLocation: formatLocation(farm.location),
-              farmImage: farm.images?.[0] || '/default-farm.jpg',
-              farmerName: farmOwner,
-              farmId: farmId,
-            }));
-        });
-
-        const productsArrays = await Promise.all(allProductsPromises);
-        const flatProducts = productsArrays.flat();
+              farmName,
+              farmLocation,
+              farmImage,
+              farmerName,
+              farmId: typeof p.farm === 'object' ? p.farm._id : p.farm,
+              productImage,
+            };
+          });
         
-        setProducts(flatProducts);
+        setProducts(transformedProducts);
       }
 
     } catch (error) {
       console.error('Error al procesar la compra:', error);
-      alert('Hubo un error al procesar tu compra. Por favor intenta nuevamente.');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Hubo un error al procesar tu compra: ${errorMessage}`);
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -337,7 +437,24 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                 key={product._id}
                 className="rounded-2xl overflow-hidden border-2 border-[#d1e751]/30 hover:shadow-morpho transition-all cursor-pointer"
               >
-                <div onClick={() => setSelectedProduct(product)}>
+                <div onClick={async () => {
+                  // Refresh balances before opening modal to avoid stale data
+                  if (user?.walletAddress) {
+                    try {
+                      const [tokenRes, ethRes] = await Promise.all([
+                        fetch(`${BLOCKCHAIN_API_URL}/token/balance/${user.walletAddress}`),
+                        fetch(`${BLOCKCHAIN_API_URL}/eth/balance/${user.walletAddress}`),
+                      ]);
+                      const tokenData = await tokenRes.json();
+                      const ethData = await ethRes.json();
+                      setMorphoAvailable(Number(tokenData?.data?.availableBalance || 0));
+                      setEthBalance(Number(ethData?.data?.balance || 0));
+                    } catch (e) {
+                      console.warn('Could not refresh balances:', e);
+                    }
+                  }
+                  setSelectedProduct(product);
+                }}>
                 <div className="relative h-48">
                   <ImageWithFallback
                     src={product.productImage || product.farmImage}
@@ -517,7 +634,7 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
 
                   <div className="p-4 rounded-lg bg-white border border-[#26ade4]/30 space-y-2">
                     <div className="flex justify-between">
-                      <Text>Subtotal</Text>
+                      <Text>Subtotal (USD)</Text>
                       <Text className="font-semibold">
                         ${(productQuantity * selectedProduct.price).toFixed(2)}
                       </Text>
@@ -530,20 +647,32 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
                     </div>
                     <Separator />
                     <div className="flex justify-between">
-                      <Heading level={4}>Total</Heading>
+                      <Heading level={4}>Total (USD)</Heading>
                       <Heading level={3} className="text-[#26ade4]">
                         ${((productQuantity * selectedProduct.price) * 1.05).toFixed(2)}
                       </Heading>
                     </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-[#26ade4]/20">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🪙</span>
+                        <Text variant="small" className="text-[#000000]/60">
+                          Equivalente en MORPHO
+                        </Text>
+                      </div>
+                      <Text className="font-bold text-[#d1e751]">
+                        {((productQuantity * selectedProduct.price) * 1.05 * 10).toFixed(0)} MORPHO
+                      </Text>
+                    </div>
                   </div>
 
                   <Button
-                    title="Confirmar Compra"
+                    title={paying ? "Procesando pago..." : "Confirmar Compra"}
                     icon={<ShoppingBag className="w-5 h-5" />}
                     iconPosition="left"
                     onClick={handleBuyProduct}
                     variant="blue"
                     className="w-full bg-[#d1e751] hover:bg-[#d1e751]/90 text-black rounded-xl py-6"
+                    disabled={paying}
                   />
                 </div>
               </div>
@@ -562,6 +691,91 @@ export function Marketplace({ onNavigate }: MarketplaceProps) {
             receiptData={receiptData}
           />
         )}
+
+        {/* Insufficient MORPHO Modal */}
+        <Modal
+          isOpen={showInsufficientMorpho}
+          onClose={() => setShowInsufficientMorpho(false)}
+          title="Fondos insuficientes de MORPHO"
+        >
+          <div className="space-y-4">
+            <Text>
+              Necesitas <span className="font-semibold text-[#d1e751]">{neededMorpho} MORPHO</span> adicionales para completar esta compra.
+            </Text>
+            <div className="p-4 rounded-lg bg-[#26ade4]/5 border-2 border-[#26ade4]/30">
+              <Text variant="small" className="text-[#000000]/70">
+                Disponible: <span className="font-semibold">{morphoAvailable.toFixed(0)} MORPHO</span>
+              </Text>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                title="Cerrar"
+                variant="white_bordered"
+                className="flex-1 rounded-xl"
+                onClick={() => setShowInsufficientMorpho(false)}
+              />
+              <Button
+                title="Obtener MORPHO (testnet)"
+                variant="blue"
+                className="flex-1 rounded-xl"
+                onClick={async () => {
+                  if (!user?.walletAddress) return;
+                  try {
+                    const res = await fetch(`${BLOCKCHAIN_API_URL}/token/faucet`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ toAddress: user.walletAddress, amount: neededMorpho })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                      setShowInsufficientMorpho(false);
+                    } else {
+                      alert(data?.error || 'No se pudo obtener MORPHO');
+                    }
+                  } catch (e) {
+                    alert('Error de conexión con el faucet');
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </Modal>
+
+        {/* Insufficient ETH Modal */}
+        <Modal
+          isOpen={showInsufficientEth}
+          onClose={() => setShowInsufficientEth(false)}
+          title="ETH insuficiente para gas"
+        >
+          <div className="space-y-4">
+            <Text>
+              Necesitas un poco de <span className="font-semibold">Sepolia ETH</span> para pagar el gas de la transacción.
+            </Text>
+            <div className="p-4 rounded-lg bg-[#26ade4]/5 border-2 border-[#26ade4]/30">
+              <Text variant="small" className="text-[#000000]/70">
+                Balance actual: <span className="font-semibold">{ethBalance.toFixed(6)} ETH</span>
+              </Text>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                title="Cerrar"
+                variant="white_bordered"
+                className="flex-1 rounded-xl"
+                onClick={() => setShowInsufficientEth(false)}
+              />
+              <a
+                className="flex-1"
+                href="https://sepoliafaucet.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <div className="w-full text-center bg-[#26ade4] hover:bg-[#1e8bb8] text-white rounded-xl py-3 font-semibold">
+                  Abrir faucet de Sepolia
+                </div>
+              </a>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );

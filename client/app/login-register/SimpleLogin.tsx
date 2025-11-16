@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { ConnectButton, useActiveAccount, useDisconnect } from "thirdweb/react";
+import { ConnectButton, useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
 import { inAppWallet } from "thirdweb/wallets";
 import { client, SUPPORTED_CHAIN } from "@/config/web3";
 import { Card } from "@/src/atoms";
@@ -15,6 +15,7 @@ export function SimpleLogin() {
   const router = useRouter();
   const { isLoggedIn, user, needsOnboarding, completeOnboarding, walletAddress, loading } = useAuth();
   const account = useActiveAccount();
+  const wallet = useActiveWallet();
   const { disconnect } = useDisconnect();
   
   const t = es.auth;
@@ -80,8 +81,8 @@ export function SimpleLogin() {
       console.log('🔄 Switching account...');
       
       // Disconnect wallet if connected
-      if (account) {
-        disconnect(account);
+      if (wallet) {
+        disconnect(wallet);
       }
       
       // Clear all storage completely
@@ -391,13 +392,28 @@ export function SimpleLogin() {
                   <p className="font-mono break-all">{walletAddress}</p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {submitting ? "Creando cuenta..." : "Completar Registro"}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Clear onboarding state and disconnect wallet
+                      setShowOnboarding(false);
+                      handleSwitchAccount();
+                    }}
+                    disabled={submitting}
+                    className="flex-shrink-0 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Desconectar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    {submitting ? "Creando cuenta..." : "Completar Registro"}
+                  </button>
+                </div>
               </form>
             )}
           </Card>

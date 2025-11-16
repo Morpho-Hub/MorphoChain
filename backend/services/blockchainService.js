@@ -158,8 +158,11 @@ class BlockchainService {
    */
   async executeTransaction(contractMethod, ...args) {
     try {
+      console.log('⚡ Ejecutando transacción con args:', args);
       const tx = await contractMethod(...args);
+      console.log('⚡ Transacción enviada, esperando confirmación...', tx.hash);
       const receipt = await tx.wait();
+      console.log('⚡ Transacción confirmada:', receipt.transactionHash);
       
       return {
         success: true,
@@ -169,7 +172,8 @@ class BlockchainService {
         receipt,
       };
     } catch (error) {
-      console.error('Error ejecutando transacción:', error);
+      console.error('❌ Error ejecutando transacción:', error);
+      console.error('❌ Error completo:', JSON.stringify(error, null, 2));
       
       // Parsear el error para obtener más información
       let errorMessage = error.message;

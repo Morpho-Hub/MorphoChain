@@ -1,92 +1,59 @@
 "use client";
 
 import { useState } from "react";
-import { useAddress } from "@thirdweb-dev/react";
+import { useActiveAccount } from "thirdweb/react";
 import { useMorphoCoinContract } from "./useContract";
-import { ethers } from "ethers";
+import { prepareContractCall, sendTransaction } from "thirdweb";
+import { toWei } from "thirdweb/utils";
 
 export function useMorphoCoin() {
-  const address = useAddress();
+  const account = useActiveAccount();
+  const address = account?.address;
   const contract = useMorphoCoinContract();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Get token balance for an address
-   */
-  const getBalance = async (walletAddress?: string): Promise<string> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const targetAddress = walletAddress || address;
-      if (!contract || !targetAddress) return "0";
-
-      const balance = await contract.call("balanceOf", [targetAddress]);
-      return ethers.utils.formatEther(balance);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error getting balance";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Get available (unfrozen) balance
-   */
-  const getAvailableBalance = async (walletAddress?: string): Promise<string> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const targetAddress = walletAddress || address;
-      if (!contract || !targetAddress) return "0";
-
-      const balance = await contract.call("getAvailableBalance", [targetAddress]);
-      return ethers.utils.formatEther(balance);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error getting available balance";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Get frozen balance
-   */
-  const getFrozenBalance = async (walletAddress?: string): Promise<string> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const targetAddress = walletAddress || address;
-      if (!contract || !targetAddress) return "0";
-
-      const balance = await contract.call("getFrozenBalance", [targetAddress]);
-      return ethers.utils.formatEther(balance);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error getting frozen balance";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Transfer tokens to another address
+   * Transfer tokens to another address (Thirdweb v5)
    */
   const transfer = async (toAddress: string, amount: string): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
-      if (!contract || !address) {
-        throw new Error("Wallet not connected");
+      
+      // Debug wallet connection state
+      console.log('🔍 Verificando estado de wallet:', {
+        account: account ? 'Existe' : 'No existe',
+        address: address || 'Sin dirección',
+        contract: contract ? 'Contrato cargado' : 'Sin contrato',
+      });
+      
+      if (!address) {
+        console.error('❌ Error: No hay dirección de wallet detectada');
+        console.log('Account completo:', account);
+        throw new Error("Por favor conecta tu wallet para continuar");
+      }
+      
+      if (!contract) {
+        throw new Error("Contrato MORPHO no disponible");
+      }
+      
+      if (!account) {
+        throw new Error("Cuenta no inicializada");
       }
 
-      const amountInWei = ethers.utils.parseEther(amount);
-      await contract.call("transfer", [toAddress, amountInWei]);
+      const amountInWei = toWei(amount);
+      
+      const transaction = prepareContractCall({
+        contract,
+        method: "function transfer(address to, uint256 amount) returns (bool)",
+        params: [toAddress, amountInWei],
+      });
+
+      await sendTransaction({
+        transaction,
+        account,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error transferring tokens";
       setError(message);
@@ -96,68 +63,17 @@ export function useMorphoCoin() {
     }
   };
 
-  /**
-   * Approve spender to use tokens
-   */
-  const approve = async (spenderAddress: string, amount: string): Promise<void> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      if (!contract || !address) {
-        throw new Error("Wallet not connected");
-      }
-
-      const amountInWei = ethers.utils.parseEther(amount);
-      await contract.call("approve", [spenderAddress, amountInWei]);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error approving tokens";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Get token info (name, symbol, decimals, supply)
-   */
-  const getTokenInfo = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      if (!contract) return null;
-
-      const [name, symbol, decimals, totalSupply] = await Promise.all([
-        contract.call("name"),
-        contract.call("symbol"),
-        contract.call("decimals"),
-        contract.call("totalSupply"),
-      ]);
-
-      return {
-        name,
-        symbol,
-        decimals: decimals.toString(),
-        totalSupply: ethers.utils.formatEther(totalSupply),
-      };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error getting token info";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Legacy methods commented out - use backend API instead
+  // const getBalance = async (walletAddress?: string): Promise<string> => { ... }
+  // const getAvailableBalance = async (walletAddress?: string): Promise<string> => { ... }
+  // const getFrozenBalance = async (walletAddress?: string): Promise<string> => { ... }
+  // const approve = async (spenderAddress: string, amount: string): Promise<void> => { ... }
+  // const getTokenInfo = async () => { ... }
 
   return {
     contract,
     isLoading,
     error,
-    getBalance,
-    getAvailableBalance,
-    getFrozenBalance,
     transfer,
-    approve,
-    getTokenInfo,
   };
 }

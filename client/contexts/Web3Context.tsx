@@ -39,7 +39,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     try {
       const wallet = inAppWallet();
       
-      const connectedAccount = await connect(async () => {
+      const connectedWallet = await connect(async () => {
         await wallet.connect({
           client,
           strategy: "google",
@@ -49,7 +49,9 @@ export function Web3Provider({ children }: Web3ProviderProps) {
         return wallet;
       });
 
-      return connectedAccount?.address;
+      // Get the account from the connected wallet
+      const walletAccount = connectedWallet?.getAccount();
+      return walletAccount?.address;
     } catch (error) {
       console.error("Error connecting with Google:", error);
       throw error;
@@ -57,9 +59,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   };
 
   const disconnectWallet = () => {
-    if (account) {
-      account.disconnect();
-    }
+    // Disconnect is handled via useDisconnect hook in components
+    console.log('Disconnect wallet called - use useDisconnect hook in component');
   };
 
   const value: Web3ContextType = {

@@ -44,6 +44,7 @@ const Button: FC<ButtonProps> = ({
       onClick={onClick} 
       disabled={disabled}
       className={`${base} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      suppressHydrationWarning
     >
       {icon && iconPosition === "left" && icon}
       {title && <span>{title}</span>}

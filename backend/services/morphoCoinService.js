@@ -64,15 +64,21 @@ class MorphoCoinService {
    */
   async mintTo(toAddress, amount) {
     try {
+      console.log('🔵 mintTo llamado:', { toAddress, amount });
       const contract = blockchainService.getMorphoCoinContract();
+      console.log('🔵 Contrato obtenido');
       const amountInWei = ethers.utils.parseEther(amount.toString());
+      console.log('🔵 Amount en wei:', amountInWei.toString());
       
-      return await blockchainService.executeTransaction(
+      const result = await blockchainService.executeTransaction(
         contract.mintTo.bind(contract),
         toAddress,
         amountInWei
       );
+      console.log('🔵 Resultado executeTransaction:', result);
+      return result;
     } catch (error) {
+      console.error('🔴 Error en mintTo:', error);
       throw new Error(`Error al mintear tokens: ${error.message}`);
     }
   }

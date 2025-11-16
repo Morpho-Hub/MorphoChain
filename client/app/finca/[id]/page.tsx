@@ -57,13 +57,17 @@ export default function FarmDetailPage() {
       const response = await farmService.getById(farmId);
       if (response.success && response.data) {
         const farmData = response.data;
-        // Normalize farm data to match Farm interface
+        // Normalize farm data to match Farm interface (with safe casts for backend schema mismatch)
+        const farmDataAny = farmData as any;
         const normalizedFarm: Farm = {
-          id: farmData._id || farmData.id || farmId,
+          id: farmData._id || (farmData as any).id || farmId,
           name: farmData.name,
           location: typeof farmData.location === 'string' 
             ? farmData.location 
-            : farmData.location?.address || farmData.location?.city || 'Ubicación no especificada',
+            : (() => {
+                const loc = farmData.location as any;
+                return loc?.address || loc?.city || 'Ubicación no especificada';
+              })(),
           description: farmData.description || '',
           estimatedEarnings: 0,
           receivedEarnings: 0,
@@ -71,18 +75,18 @@ export default function FarmDetailPage() {
           tokenEarnings: 0,
           products: [],
           productsCount: 0,
-          sustainability: farmData.impactMetrics?.biodiversityScore || 0,
+          sustainability: farmData.impactMetrics?.biodiversity || 0,
           practices: farmData.practices?.length || 0,
           images: farmData.images?.map((img: any) => typeof img === 'string' ? img : img.url) || [],
-          certifications: farmData.certifications?.map((cert: any) => typeof cert === 'string' ? cert : cert.name) || [],
+          certifications: farmDataAny.certifications?.map((cert: any) => typeof cert === 'string' ? cert : cert.name) || [],
           environmentalMetrics: farmData.impactMetrics ? {
-            carbonReduction: farmData.impactMetrics.co2Reduction || 0,
-            waterSaved: farmData.impactMetrics.waterUsageReduction || 0,
+            carbonReduction: farmDataAny.impactMetrics.co2Reduction || 0,
+            waterSaved: farmData.impactMetrics.waterUsage || 0,
             soilHealth: farmData.impactMetrics.soilHealth || 0,
-            biodiversityIndex: farmData.impactMetrics.biodiversityScore || 0,
-            verificationStatus: farmData.verificationStatus || 'pending' as const,
-            lastVerificationDate: farmData.lastVerificationDate || new Date().toISOString(),
-            nextVerificationDate: farmData.nextVerificationDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            biodiversityIndex: farmData.impactMetrics.biodiversity || 0,
+            verificationStatus: (farmData.verificationStatus === 'unverified' ? 'pending' : farmData.verificationStatus) || 'pending' as const,
+            lastVerificationDate: farmDataAny.lastVerificationDate || new Date().toISOString(),
+            nextVerificationDate: farmDataAny.nextVerificationDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
           } : undefined
         };
         setFarm(normalizedFarm);
@@ -195,7 +199,7 @@ export default function FarmDetailPage() {
         if (response.success && response.data) {
           console.log('✅ Product updated successfully');
           const updatedListing: ProductListing = {
-            id: response.data._id || response.data.id,
+            id: response.data._id || (response.data as any).id,
             name: response.data.name,
             price: response.data.price,
             unit: response.data.unit,
@@ -367,7 +371,7 @@ export default function FarmDetailPage() {
         
         const response = await farmService.update(farmId, {
           certifications: certObjects
-        });
+        } as any);
         
         if (response.success) {
           console.log('✅ Certification added successfully');
@@ -399,7 +403,7 @@ export default function FarmDetailPage() {
       
       const response = await farmService.update(farmId, {
         certifications: certObjects
-      });
+      } as any);
       
       if (response.success) {
         console.log('✅ Certification deleted successfully');

@@ -5,7 +5,11 @@ import { validate, validationRules } from '../middlewares/validation.js';
 
 const router = express.Router();
 
-// All routes require authentication
+// Public routes (NO require authentication)
+router.get('/public/:id', userController.getPublicById);
+router.get('/wallet/:address', userController.getUserByWallet);
+
+// All routes below require authentication
 router.use(authenticate);
 
 // Profile routes
@@ -16,9 +20,6 @@ router.put('/me/role', userController.updateRole);
 // Stats routes
 router.get('/me/farmer-stats', userController.getFarmerStats);
 router.get('/me/investor-stats', userController.getInvestorStats);
-
-// Public user info
-router.get('/wallet/:address', userController.getUserByWallet);
 
 // Internal routes
 router.put('/:id/token-balance', userController.updateTokenBalance);

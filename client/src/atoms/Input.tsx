@@ -10,6 +10,7 @@ const Input: FC<InputProps> = ({ className = "", ...props }) => {
   return (
     <input
       className={`${baseStyles} ${className}`}
+      suppressHydrationWarning
       {...props}
     />
   );

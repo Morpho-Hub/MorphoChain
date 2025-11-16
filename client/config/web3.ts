@@ -10,11 +10,11 @@ export const client = createThirdwebClient({
 // Supported Chains
 export const SUPPORTED_CHAIN = sepolia;
 
-// Contract Addresses (Sepolia)
+// Contract Addresses (Sepolia) - DEBEN COINCIDIR CON backend/.env
 export const CONTRACT_ADDRESSES = {
-  MORPHOCOIN: "0x6e81691b381255bf0d2056c6a4017a53bb3a421c",
-  PLANTATION_MANAGER: "0xef67f46539f4e5d6991cab46153a109c00c3ba00",
-  MORPHO_MARKETPLACE: "0x35ac5e4061090849bcc26d507a4188dbb4557d66",
+  MORPHOCOIN: "0xa0943426e598d223852023e7879d92c704791e62",
+  PLANTATION_MANAGER: "0xde4822ea001c21f8dbd5d37c290808d877e9166f",
+  MORPHO_MARKETPLACE: "0x7eaa1f39cfbb0a128a7cdf5a74c3e0c6378b6b9b",
 } as const;
 
 // Chain ID

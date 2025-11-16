@@ -6,6 +6,21 @@ import jwt from 'jsonwebtoken';
 
 export const userController = {
   /**
+   * Get public user info by ID (no auth required)
+   * GET /api/users/public/:id
+   */
+  getPublicById: asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = await User.findById(id)
+      .select('firstName lastName walletAddress role profilePicture');
+
+    if (!user) {
+      return errorResponse(res, MESSAGES.USER.NOT_FOUND, 404);
+    }
+
+    return successResponse(res, user, 'User public info retrieved');
+  }),
+  /**
    * Get current user profile
    * GET /api/users/me
    */
