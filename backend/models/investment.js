@@ -5,7 +5,7 @@ const investmentSchema = new Schema({
     investor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     investorWallet: { type: String, required: true, lowercase: true },
     
-    farm: { type: Schema.Types.ObjectId, ref: 'Farm', required: true },
+    farm: { type: Schema.Types.ObjectId, ref: 'Farm', required: false }, // Optional: null for regenerative tokens
     farmTokenId: { type: String }, // Token ID del NFT de la finca
     
     // Detalles de la inversión

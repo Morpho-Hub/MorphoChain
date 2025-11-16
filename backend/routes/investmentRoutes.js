@@ -8,6 +8,12 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
+// Buy farm tokens
+router.post('/buy-tokens', investmentController.buyFarmTokens);
+
+// Buy regenerative tokens (corporate sustainability)
+router.post('/buy-regenerative-tokens', investmentController.buyRegenerativeTokens);
+
 // Get investments
 router.get('/:id', investmentController.getInvestmentById);
 router.get('/user/:userId', investmentController.getInvestmentsByUser);

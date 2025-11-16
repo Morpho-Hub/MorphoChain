@@ -62,6 +62,20 @@ class InvestmentService {
     return api.post<Investment>('/investments', data);
   }
 
+  async buyFarmTokens(farmId: string, tokenAmount: number, transferTxHash: string): Promise<ApiResponse<{
+    investment: Investment;
+    farmName: string;
+    tokensPurchased: number;
+    morphoSpent: number;
+    expectedAnnualReturn: number;
+  }>> {
+    return api.post('/investments/buy-tokens', {
+      farmId,
+      tokenAmount,
+      transferTxHash
+    });
+  }
+
   async getInvestmentsByFarm(farmId: string): Promise<ApiResponse<Investment[]>> {
     return api.get<Investment[]>(`/investments/farm/${farmId}`);
   }
@@ -75,6 +89,29 @@ class InvestmentService {
     avgMonthlyROI: number;
   }>> {
     return api.get('/investments/portfolio/stats');
+  }
+
+  async buyRegenerativeTokens(
+    tokenAmount: number, 
+    transferTxHash: string, 
+    companyName?: string
+  ): Promise<ApiResponse<{
+    investment: Investment;
+    tokensPurchased: number;
+    morphoSpent: number;
+    carbonOffset: string;
+    waterSaved: string;
+    treesPlanted: number;
+    transactionHash: string;
+    mintTransactionHash?: string;
+    certificateId: string;
+    purchaseDate: string;
+  }>> {
+    return api.post('/investments/buy-regenerative-tokens', {
+      tokenAmount,
+      transferTxHash,
+      companyName
+    });
   }
 }
 

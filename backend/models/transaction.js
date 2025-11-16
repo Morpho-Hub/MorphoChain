@@ -13,15 +13,16 @@ const transactionSchema = new Schema({
         type: String,
         required: true,
         enum: [
-            'investment',        // Inversión en una finca
-            'product-purchase',  // Compra de producto
-            'token-transfer',    // Transferencia de tokens
-            'dividend',          // Pago de dividendos
-            'harvest-sale',      // Venta de cosecha
-            'withdrawal',        // Retiro de fondos
-            'deposit',           // Depósito de fondos
-            'refund',            // Reembolso
-            'fee',               // Comisión/tarifa
+            'investment',             // Inversión en una finca
+            'product-purchase',       // Compra de producto
+            'token-transfer',         // Transferencia de tokens
+            'dividend',               // Pago de dividendos
+            'harvest-sale',           // Venta de cosecha
+            'withdrawal',             // Retiro de fondos
+            'deposit',                // Depósito de fondos
+            'refund',                 // Reembolso
+            'fee',                    // Comisión/tarifa
+            'regenerative_purchase',  // Compra de tokens regenerativos corporativos
             'other'
         ]
     },
