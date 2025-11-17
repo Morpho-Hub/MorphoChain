@@ -132,22 +132,66 @@ export const userController = {
     // Get products
     const products = await Product.find({ seller: userId });
 
+    // Get transactions for earnings
+    const Transaction = (await import('../models/index.js')).Transaction;
+    const tokenEarnings = await Transaction.find({
+      to: userId,
+      type: { $in: ['harvest-sale', 'dividend'] },
+      status: 'completed'
+    });
+
+    const productSales = await Transaction.find({
+      to: userId,
+      type: 'product-purchase',
+      status: 'completed'
+    });
+
     const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
     const totalRevenue = products.reduce((sum, prod) => sum + prod.revenue, 0);
+    const tokenEarningsTotal = tokenEarnings.reduce((sum, tx) => sum + tx.amount, 0);
+    const productSalesTotal = productSales.reduce((sum, tx) => sum + tx.amount, 0);
     const activeFarms = farms.filter(f => f.status === 'active').length;
     const activeProducts = products.filter(p => p.status === 'active').length;
+    const tokenizedFarms = farms.filter(f => f.tokenId).length;
+
+    // Calculate environmental metrics from tokenized farms
+    const environmentalMetrics = farms.reduce((acc, farm) => {
+      if (farm.tokenId && farm.impactMetrics) {
+        acc.totalCO2Reduction += farm.impactMetrics.co2Reduction || 0;
+        acc.totalWaterSaved += farm.impactMetrics.waterUsageReduction || 0;
+        acc.totalSoilRestored += farm.landSize || 0;
+        acc.avgBiodiversity += farm.impactMetrics.biodiversityScore || 0;
+        acc.count++;
+      }
+      return acc;
+    }, { totalCO2Reduction: 0, totalWaterSaved: 0, totalSoilRestored: 0, avgBiodiversity: 0, count: 0 });
+
+    if (environmentalMetrics.count > 0) {
+      environmentalMetrics.avgBiodiversity = Math.round(environmentalMetrics.avgBiodiversity / environmentalMetrics.count);
+    }
 
     const stats = {
       totalFarms: farms.length,
       activeFarms,
+      tokenizedFarms,
       totalInvestmentsReceived: investments.length,
       totalInvestedAmount: totalInvested,
       totalProducts: products.length,
       activeProducts,
       totalRevenue,
+      tokenEarnings: tokenEarningsTotal,
+      productSalesEarnings: productSalesTotal,
+      totalEarnings: tokenEarningsTotal + productSalesTotal,
+      estimatedEarnings: totalInvested * 0.15, // Estimated 15% ROI
       averageFarmSize: farms.length > 0 
         ? farms.reduce((sum, f) => sum + f.landSize, 0) / farms.length 
-        : 0
+        : 0,
+      environmentalImpact: {
+        co2Reduction: environmentalMetrics.totalCO2Reduction,
+        waterSaved: environmentalMetrics.totalWaterSaved,
+        soilRestored: environmentalMetrics.totalSoilRestored,
+        biodiversity: environmentalMetrics.avgBiodiversity
+      }
     };
 
     return successResponse(res, stats, 'Farmer stats retrieved successfully');

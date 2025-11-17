@@ -57,7 +57,7 @@ class ImpactMetricsService {
   }
 
   async getMyAggregatedImpact(): Promise<ApiResponse<AggregatedImpactMetrics>> {
-    return api.get<AggregatedImpactMetrics>('/impact-metrics/my-impact/aggregated');
+    return api.get<AggregatedImpactMetrics>('/impact/my/aggregated');
   }
 
   async verifyMetrics(id: string): Promise<ApiResponse<ImpactMetrics>> {

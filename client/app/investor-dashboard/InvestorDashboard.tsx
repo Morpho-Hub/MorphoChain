@@ -37,93 +37,76 @@ const PortfolioPage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Load portfolio stats
-        const statsResponse = await investmentService.getPortfolioStats();
-        if (statsResponse.success && statsResponse.data) {
-          const stats = statsResponse.data;
-          setPortfolioData({
-            totalValue: stats.totalValue,
-            activeTokens: stats.activeInvestments,
-            farmsCount: stats.farmsCount,
-            avgMonthlyROI: stats.avgMonthlyROI,
-            roiChange: stats.totalROI > 0 ? 1.2 : -0.5,
-            impactScore: 88, // TODO: Calculate from metrics
-            impactLabel: stats.totalROI > 10 ? 'Excelente' : 'Bueno',
-            growthPercentage: ((stats.totalValue - stats.totalInvested) / stats.totalInvested) * 100,
-          });
-        }
+        // Mock data simple
+        setPortfolioData({
+          totalValue: 5000,
+          activeTokens: 250,
+          farmsCount: 3,
+          avgMonthlyROI: 1.5,
+          roiChange: 5.2,
+          impactScore: 85,
+          impactLabel: 'Excelente',
+          growthPercentage: 12.5,
+        });
 
-        // Load my investments
-        const investmentsResponse = await investmentService.getMyInvestments();
-        if (investmentsResponse.success && investmentsResponse.data) {
-          const formattedInvestments = investmentsResponse.data.map((inv: any) => {
-            const farm = typeof inv.farm === 'object' ? inv.farm : null;
-            const roi = inv.roi || 0;
-            
-            return {
-              id: inv._id,
-              name: farm?.name || 'Finca',
-              location: farm?.location || 'Costa Rica',
-              tokens: inv.tokensAmount,
-              value: `$${inv.currentValue?.toFixed(2) || inv.amount.toFixed(2)}`,
-              invested: `$${inv.amount.toFixed(2)}`,
-              roi: roi >= 0 ? `+${roi.toFixed(1)}%` : `${roi.toFixed(1)}%`,
-              trend: roi >= 0 ? 'up' as const : 'down' as const,
-              impactScore: farm?.impactMetrics?.soilHealth || 0,
-              soilHealth: farm?.impactMetrics?.soilHealth || 0,
-              carbonScore: farm?.impactMetrics?.carbonScore || 0,
-              vegetationIndex: farm?.impactMetrics?.vegetationIndex || 0,
-              isVerified: farm?.verificationStatus === 'verified',
-            };
-          });
-          setMyInvestments(formattedInvestments);
-        }
+        setMyInvestments([]);
 
-        // Load impact metrics
-        const impactResponse = await impactMetricsService.getMyAggregatedImpact();
-        if (impactResponse.success && impactResponse.data) {
-          const impact = impactResponse.data;
-          setImpactData({
-            metrics: [
-              {
-                value: `${impact.totalCO2Sequestered.toFixed(1)} tons`,
-                label: "CO₂ Secuestrado",
-                progress: 78,
-                progressLabel: "78% de la meta anual",
-                icon: Sprout,
-                theme: "light" as const
-              },
-              {
-                value: `${(impact.totalWaterConserved / 1000).toFixed(1)}K gal`,
-                label: "Agua Conservada",
-                progress: 85,
-                progressLabel: "85% de la meta anual",
-                icon: Droplet,
-                theme: "light" as const
-              },
-              {
-                value: `${impact.totalSoilRestored.toFixed(1)} ha`,
-                label: "Suelo Restaurado",
-                progress: 92,
-                progressLabel: "92% de mejora",
-                icon: Globe,
-                theme: "light" as const
-              },
-              {
-                value: `+${impact.avgBiodiversity.toFixed(0)}%`,
-                label: "Biodiversidad",
-                progress: impact.avgBiodiversity,
-                progressLabel: `${impact.avgBiodiversity}% de aumento`,
-                icon: Leaf,
-                theme: "light" as const
-              }
-            ],
-            achievement: {
-              title: "Logro de Impacto Desbloqueado",
-              description: `Has ayudado a restaurar más de ${impact.totalSoilRestored.toFixed(1)} hectáreas de tierras agrícolas costarricenses`
+        // Mock impact data
+        setImpactData({
+          metrics: [
+            {
+              value: "12.5 tons",
+              label: "CO₂ Secuestrado",
+              progress: 65,
+              progressLabel: "65% de la meta anual",
+              icon: Sprout,
+              theme: "light" as const
+            },
+            {
+              value: "125K gal",
+              label: "Agua Conservada",
+              progress: 70,
+              progressLabel: "70% de la meta anual",
+              icon: Droplet,
+              theme: "light" as const
+            },
+            {
+              value: "8.5 ha",
+              label: "Suelo Restaurado",
+              progress: 75,
+              progressLabel: "75% de mejora",
+              icon: Globe,
+              theme: "light" as const
+            },
+            {
+              value: "+45%",
+              label: "Biodiversidad",
+              progress: 45,
+              progressLabel: "45% de aumento",
+              icon: Leaf,
+              theme: "light" as const
             }
-          });
-        }
+          ],
+          achievement: {
+            title: "Logro de Impacto Desbloqueado",
+            description: "Has ayudado a restaurar 8.5 hectáreas de tierras agrícolas"
+          }
+        });
+
+        // Mock portfolio distribution
+        setPortfolioChartData([
+          { name: 'Finca Papayas', value: 2000, color: '#66b32e' },
+          { name: 'Tokens Regenerativos', value: 2000, color: '#26ade4' },
+          { name: 'Finca Café', value: 1000, color: '#d1e751' }
+        ]);
+
+        // Mock performance data
+        const months = ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const performanceChartData = months.map((month, index) => ({
+          name: month,
+          value: 4000 + (index * 150) + (Math.random() * 100)
+        }));
+        setPerformanceData(performanceChartData);
 
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -189,16 +172,22 @@ const PortfolioPage: React.FC = () => {
     return { percentage: '+0%', direction: 'up' };
   }
 
-  const firstValue = data[0].value;
-  const lastValue = data[data.length - 1].value;
+  const firstValue = data[0]?.value || 0;
+  const lastValue = data[data.length - 1]?.value || 0;
+
+  if (firstValue === 0 && lastValue === 0) {
+    return { percentage: '+0%', direction: 'up' };
+  }
 
   if (firstValue === 0) {
-    return { percentage: '+0%', direction: 'up' };
+    return { percentage: `+${lastValue.toFixed(0)}%`, direction: 'up' };
   }
 
   const change = ((lastValue - firstValue) / firstValue) * 100;
   const direction: 'up' | 'down' = change < 0 ? 'down' : 'up';
   const formattedPercentage = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+
+  console.log('📈 Growth calculation:', { firstValue, lastValue, change, formattedPercentage });
 
   return { percentage: formattedPercentage, direction };
   }

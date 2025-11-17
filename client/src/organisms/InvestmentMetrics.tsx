@@ -2,33 +2,33 @@ import { Typography } from '../atoms/Typography';
 import { Icon } from '../atoms/Icon';
 
 interface InvestmentMetricsProps {
-  tokens: number;
-  invested: string;
-  value: string;
-  roi: string;
-  impactScore: number;
-  trend: 'up' | 'down';
+  tokens?: number;
+  invested?: string;
+  value?: string;
+  roi?: string;
+  impactScore?: number;
+  trend?: 'up' | 'down';
 }
 
 export const InvestmentMetrics = ({
-  tokens,
-  invested,
-  value,
-  roi,
-  impactScore,
-  trend
+  tokens = 0,
+  invested = '$0',
+  value = '$0',
+  roi = '+0%',
+  impactScore = 0,
+  trend = 'up'
 }: InvestmentMetricsProps) => {
   const metrics = [
-    { label: 'Tokens en Posesión', value: tokens.toString() },
-    { label: 'Invertido', value: invested },
-    { label: 'Valor Actual', value: value },
+    { label: 'Tokens en Posesión', value: (tokens || 0).toString() },
+    { label: 'Invertido', value: invested || '$0' },
+    { label: 'Valor Actual', value: value || '$0' },
     { 
       label: 'ROI', 
-      value: roi,
+      value: roi || '+0%',
       isROI: true,
       trend 
     },
-    { label: 'Impacto', value: impactScore.toString() }
+    { label: 'Impacto', value: (impactScore || 0).toString() }
   ];
 
   return (

@@ -11,6 +11,7 @@ router.get('/leaderboard', impactMetricsController.getLeaderboard);
 // Protected routes
 router.use(authenticate);
 
+router.get('/my/aggregated', impactMetricsController.getMyAggregatedImpact);
 router.get('/user/:userId', impactMetricsController.getMetricsByUser);
 router.get('/farm/:farmId', impactMetricsController.getMetricsByFarm);
 router.get('/:entityType/:entityId/score', impactMetricsController.calculateImpactScore);

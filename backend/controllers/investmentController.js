@@ -7,6 +7,99 @@ import plantationService from '../services/plantationService.js';
 
 export const investmentController = {
   /**
+   * Get my investments
+   * GET /api/investments/my/investments
+   */
+  getMyInvestments: asyncHandler(async (req, res) => {
+    const userId = req.userId;
+
+    const investments = await Investment.find({ investor: userId })
+      .populate('farm', 'name location impactMetrics verificationStatus tokenId')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log('💼 Getting investments for user:', userId);
+    console.log('💼 Total investments found:', investments.length);
+    
+    // Add metadata for regenerative token purchases
+    const enrichedInvestments = investments.map(inv => {
+      if (!inv.farm && inv.farmTokenId === 'DISTRIBUTED_TO_FARMS') {
+        return {
+          ...inv,
+          farm: {
+            name: 'Tokens Regenerativos',
+            location: 'Distribuido en todas las fincas',
+            _id: 'regenerative'
+          }
+        };
+      }
+      return inv;
+    });
+
+    console.log('💼 Enriched investments:', enrichedInvestments.length);
+
+    return successResponse(res, enrichedInvestments, 'My investments retrieved successfully');
+  }),
+
+  /**
+   * Get portfolio stats
+   * GET /api/investments/my/stats
+   */
+  getPortfolioStats: asyncHandler(async (req, res) => {
+    const userId = req.userId;
+
+    const investments = await Investment.find({ 
+      investor: userId
+    }).populate('farm', 'name cropType');
+
+    console.log('📊 Getting portfolio stats for user:', userId);
+    console.log('📊 Total investments found:', investments.length);
+
+    // Get all farms invested in (excluding regenerative tokens)
+    const uniqueFarms = new Set(
+      investments
+        .filter(inv => inv.farm && inv.farmTokenId !== 'DISTRIBUTED_TO_FARMS')
+        .map(inv => inv.farm?._id?.toString())
+        .filter(Boolean)
+    );
+
+    // Calculate totals
+    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    const totalReturns = investments.reduce((sum, inv) => sum + (inv.currentReturn || 0), 0);
+    
+    // Total tokens purchased across all investments
+    const totalTokens = investments.reduce((sum, inv) => sum + (inv.tokensAmount || inv.amountInTokens || 0), 0);
+    
+    // Active investments count
+    const activeInvestmentsCount = investments.filter(inv => 
+      inv.status === 'active' || inv.status === 'confirmed'
+    ).length;
+    
+    // Calculate current value
+    const totalValue = totalInvested + totalReturns;
+
+    const totalROI = totalInvested > 0 ? ((totalReturns) / totalInvested) * 100 : 0;
+    const avgMonthlyROI = totalROI / 12;
+
+    const stats = {
+      totalValue,
+      totalInvested,
+      totalReturns,
+      activeInvestments: totalTokens, // Total tokens purchased
+      activeInvestmentsCount, // Number of active investments
+      farmsCount: uniqueFarms.size,
+      totalROI,
+      avgMonthlyROI,
+      portfolioValue: totalValue,
+      totalTokens // Add explicit field
+    };
+
+    console.log('📊 Portfolio stats calculated:', stats);
+
+    return successResponse(res, stats, 'Portfolio stats retrieved successfully');
+  }),
+
+  /**
    * Buy farm tokens with MORPHO
    * POST /api/investments/buy-tokens
    */
@@ -124,10 +217,12 @@ export const investmentController = {
         farmTokenId: farm.tokenId,
         amount: morphoCost,
         amountInTokens: tokenAmount,
+        tokensAmount: tokenAmount, // Add this field for stats
         percentage: (tokenAmount / (farm.landSize * 100)) * 100, // 100 tokens per hectare
-        status: 'confirmed',
+        status: 'active',
         investmentDate: new Date(),
         expectedReturn: morphoCost * 0.15, // 15% annual ROI
+        currentReturn: 0,
         transactionHash: transferTxHash,
         blockNumber: receipt.blockNumber,
       });
@@ -515,11 +610,13 @@ export const investmentController = {
         farm: null, // Distributed across all farms
         farmTokenId: 'DISTRIBUTED_TO_FARMS',
         amount: morphoCost,
+        tokensAmount: tokenAmount, // Add this field for stats
         amountInTokens: tokenAmount,
         percentage: 0,
-        status: 'confirmed',
+        status: 'active',
         investmentDate: new Date(),
         expectedReturn: tokenAmount * 0.05, // Mock 5% annual return
+        currentReturn: 0,
         transactionHash: transferTxHash,
         blockNumber: receipt.blockNumber,
       });

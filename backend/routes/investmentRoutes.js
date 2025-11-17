@@ -15,6 +15,8 @@ router.post('/buy-tokens', investmentController.buyFarmTokens);
 router.post('/buy-regenerative-tokens', investmentController.buyRegenerativeTokens);
 
 // Get investments
+router.get('/my/investments', investmentController.getMyInvestments);
+router.get('/my/stats', investmentController.getPortfolioStats);
 router.get('/:id', investmentController.getInvestmentById);
 router.get('/user/:userId', investmentController.getInvestmentsByUser);
 router.get('/farm/:farmId', investmentController.getInvestmentsByFarm);

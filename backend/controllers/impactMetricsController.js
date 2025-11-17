@@ -204,4 +204,55 @@ export const impactMetricsController = {
 
     return successResponse(res, topMetrics, 'Leaderboard retrieved successfully');
   }),
+
+  /**
+   * Get my aggregated impact (for investors)
+   * GET /api/impact/my/aggregated
+   */
+  getMyAggregatedImpact: asyncHandler(async (req, res) => {
+    const userId = req.userId;
+
+    console.log('🌍 Getting aggregated impact for user:', userId);
+
+    // Get all investments by this user
+    const Investment = (await import('../models/index.js')).Investment;
+    const investments = await Investment.find({
+      investor: userId
+    }).populate('farm');
+
+    console.log('🌍 Total investments found:', investments.length);
+
+    // Aggregate impact from all invested farms
+    const aggregatedImpact = investments.reduce((acc, inv) => {
+      const farm = inv.farm;
+      console.log('🌍 Processing investment farm:', farm?.name, 'with impactMetrics:', farm?.impactMetrics);
+      
+      if (farm && farm.impactMetrics) {
+        const metrics = farm.impactMetrics;
+        // Weight by investment percentage (default to 1 if no tokens)
+        const weight = (inv.tokensAmount || inv.amount || 1) / 100;
+        
+        acc.totalCO2Sequestered += (metrics.co2Reduction || 0) * weight;
+        acc.totalWaterConserved += (metrics.waterUsageReduction || 0) * weight;
+        acc.totalSoilRestored += (farm.landSize || 0) * weight;
+        acc.avgBiodiversity += metrics.biodiversityScore || 0;
+        acc.count++;
+      }
+      return acc;
+    }, {
+      totalCO2Sequestered: 0,
+      totalWaterConserved: 0,
+      totalSoilRestored: 0,
+      avgBiodiversity: 0,
+      count: 0
+    });
+
+    if (aggregatedImpact.count > 0) {
+      aggregatedImpact.avgBiodiversity = aggregatedImpact.avgBiodiversity / aggregatedImpact.count;
+    }
+
+    console.log('🌍 Aggregated impact calculated:', aggregatedImpact);
+
+    return successResponse(res, aggregatedImpact, 'Aggregated impact retrieved successfully');
+  }),
 };

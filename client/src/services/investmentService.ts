@@ -51,7 +51,7 @@ class InvestmentService {
   }
 
   async getMyInvestments(): Promise<ApiResponse<Investment[]>> {
-    return api.get<Investment[]>('/investments/my-investments');
+    return api.get<Investment[]>('/investments/my/investments');
   }
 
   async getInvestmentById(id: string): Promise<ApiResponse<Investment>> {
@@ -88,7 +88,7 @@ class InvestmentService {
     farmsCount: number;
     avgMonthlyROI: number;
   }>> {
-    return api.get('/investments/portfolio/stats');
+    return api.get('/investments/my/stats');
   }
 
   async buyRegenerativeTokens(

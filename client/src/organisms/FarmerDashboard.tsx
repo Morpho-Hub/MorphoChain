@@ -30,7 +30,7 @@ const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
 }) => {
   const t = es.farmerDashboard;
 
-  // Calcular estadísticas totales
+  // Calcular estadísticas localmente desde las fincas
   const totalEstimatedEarnings = farms.reduce((sum, farm) => sum + farm.estimatedEarnings, 0);
   const totalReceivedEarnings = farms.reduce((sum, farm) => sum + farm.receivedEarnings, 0);
   const totalProducts = totalProductsProp ?? farms.reduce((sum, farm) => sum + farm.productsCount, 0);
@@ -77,40 +77,20 @@ const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <DashboardStatCard
-            title={t.estimatedEarnings}
-            value={formatCurrency(totalEstimatedEarnings)}
-            subtitle={t.totalPotential}
-            icon={DollarSign}
-            iconColor="text-black"
-            iconBgColor="bg-gray-100"
-          />
-          <DashboardStatCard
-            title={t.receivedEarnings}
-            value={formatCurrency(totalReceivedEarnings)}
-            subtitle={t.deposited}
-            icon={TrendingUp}
-            iconColor="text-black"
-            iconBgColor="bg-gray-100"
-          />
-          <DashboardStatCard
-            title={t.totalFarms}
-            value={farms.length}
-            subtitle={`${totalProducts} ${t.products}`}
-            icon={Sprout}
-            iconBgColor="bg-gray-100"
-            iconColor="text-black"
-          />
-          <DashboardStatCard
-            title={t.averageSustainability}
-            value={`${averageSustainability}%`}
-            subtitle={t.impactIndex}
-            icon={Leaf}
-            iconBgColor="bg-gray-100"
-            iconColor="text-black"
-          />
+        {/* Stats Grid - Simple */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <p className="text-gray-600 text-sm mb-2">{t.totalFarms}</p>
+            <p className="text-3xl font-bold text-black">{farms.length}</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <p className="text-gray-600 text-sm mb-2">Productos</p>
+            <p className="text-3xl font-bold text-black">{totalProducts}</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <p className="text-gray-600 text-sm mb-2">Sostenibilidad</p>
+            <p className="text-3xl font-bold text-black">{averageSustainability}%</p>
+          </div>
         </div>
 
         {/* My Farms Section */}

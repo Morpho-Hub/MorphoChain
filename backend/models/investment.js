@@ -11,6 +11,7 @@ const investmentSchema = new Schema({
     // Detalles de la inversión
     amount: { type: Number, required: true, min: 0 }, // Monto en USD
     amountInTokens: { type: Number, required: true, min: 0 }, // Monto en MorphoCoin
+    tokensAmount: { type: Number, min: 0 }, // Number of tokens purchased (for display)
     percentage: { type: Number, min: 0, max: 100 }, // Porcentaje de participación en la finca
     
     // Blockchain reference - IMPORTANTE para Backend 3.0
